@@ -38,7 +38,7 @@ export function Hero({ onTrack, trackingLoading }: HeroProps) {
             initial="hidden"
             animate="show"
             custom={0}
-            className="text-3xl font-extrabold leading-[1.12] tracking-[-0.02em] text-ink sm:text-4xl xl:text-[2.75rem]"
+            className="text-lg font-extrabold leading-[1.15] tracking-[-0.02em] text-ink sm:text-[2rem] sm:leading-[1.12] xl:text-[2.5rem]"
           >
             Discreet Delivery.
             <span className="block text-brand-600">Delivered with Care.</span>
@@ -49,7 +49,7 @@ export function Hero({ onTrack, trackingLoading }: HeroProps) {
             initial="hidden"
             animate="show"
             custom={1}
-            className="mt-4 max-w-md text-base leading-relaxed text-ink-soft lg:max-w-none lg:text-[13px] lg:leading-snug lg:tracking-[-0.01em] xl:whitespace-nowrap"
+            className="mt-4 max-w-md text-[13px] leading-snug tracking-[-0.01em] text-ink-soft lg:max-w-none xl:whitespace-nowrap"
           >
             Legal, Private, secure, and on-time delivery services you can trust—every time.
           </motion.p>

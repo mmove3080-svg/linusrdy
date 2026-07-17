@@ -34,14 +34,14 @@ export function TrackingCard({ onTrack, loading = false }: TrackingCardProps) {
   };
 
   return (
-    <div className="card w-full max-w-xl p-4 sm:p-5">
+    <div className="card w-full max-w-xl p-3 sm:p-5">
       <div
-        className={`flex items-stretch gap-2 rounded-2xl border border-canvas-line bg-white p-1.5 transition-shadow duration-300 focus-within:border-brand-300 focus-within:shadow-glowInput ${
+        className={`flex items-stretch gap-1.5 rounded-xl border border-canvas-line bg-white p-1 transition-shadow duration-300 sm:gap-2 sm:rounded-2xl sm:p-1.5 focus-within:border-brand-300 focus-within:shadow-glowInput ${
           glow ? "border-brand-300 shadow-glowInput" : ""
         }`}
       >
-        <div className="flex items-center pl-3 text-brand-600" aria-hidden="true">
-          <Package className="h-6 w-6" strokeWidth={1.8} />
+        <div className="flex items-center pl-2.5 text-brand-600 sm:pl-3" aria-hidden="true">
+          <Package className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={1.8} />
         </div>
         <input
           ref={inputRef}
@@ -54,23 +54,23 @@ export function TrackingCard({ onTrack, loading = false }: TrackingCardProps) {
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && submit()}
-          className="min-w-0 flex-1 bg-transparent px-2 text-[15px] font-semibold text-ink outline-none ring-0 placeholder:text-ink-faint focus-visible:ring-0"
+          className="min-w-0 flex-1 bg-transparent px-1.5 text-[13px] font-semibold text-ink sm:px-2 sm:text-[15px] outline-none ring-0 placeholder:text-ink-faint focus-visible:ring-0"
         />
         <button
           type="button"
           onClick={submit}
           disabled={loading}
-          className="btn-primary shrink-0 rounded-xl px-4 py-3 text-xs sm:px-6 sm:text-sm"
+          className="btn-primary shrink-0 rounded-lg px-3 py-2.5 text-[11px] sm:rounded-xl sm:px-6 sm:py-3 sm:text-sm"
         >
           {loading ? "Tracking…" : "Track Package"}
         </button>
       </div>
 
-      <div className="mt-4 flex items-start gap-3 px-1">
+      <div className="mt-3 flex items-start gap-2.5 px-1 sm:mt-4 sm:gap-3">
         <span className="mt-0.5 text-brand-600" aria-hidden="true">
-          <ShieldCheck className="h-6 w-6" strokeWidth={1.8} />
+          <ShieldCheck className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={1.8} />
         </span>
-        <p className="text-sm leading-relaxed text-ink-soft">
+        <p className="text-[11.5px] leading-snug text-ink-soft sm:text-sm sm:leading-relaxed">
           <span className="font-semibold text-ink">Your privacy is our priority.</span>
           <br />
           All deliveries are 100% discreet and secure.
