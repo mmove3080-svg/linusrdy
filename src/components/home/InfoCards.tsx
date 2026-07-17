@@ -42,15 +42,17 @@ const CARDS: InfoCard[] = [
 ];
 
 /**
- * Four equal info cards: illustration area, headline with blue accent word,
- * short blue underline, description lines, circular arrow button bottom-right.
+ * Info cards.
+ * Mobile: 2×2 grid of compact vertical cards (icon above text) so the
+ * section takes a quarter of the height of four stacked wide cards.
+ * Desktop: original horizontal cards in a row of four.
  */
 export function InfoCards() {
   const scrollTo = useSmoothScroll();
 
   return (
-    <section aria-label="Highlights" className="shell pb-8">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <section aria-label="Highlights" className="shell pb-6 sm:pb-8 [content-visibility:auto] [contain-intrinsic-size:auto_520px]">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         {CARDS.map(({ icon: Icon, headline, lines, targetId, focusTracking }, i) => (
           <motion.article
             key={headline.join("")}
@@ -58,29 +60,29 @@ export function InfoCards() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-40px" }}
             transition={{ delay: i * 0.08, duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-            className="card group relative flex gap-4 rounded-2xl p-[1.125rem] transition-all duration-300 hover:-translate-y-1 hover:shadow-lift"
+            className="card group relative flex flex-col gap-3 rounded-2xl p-3.5 transition-all duration-300 hover:-translate-y-1 hover:shadow-lift sm:flex-row sm:gap-4 sm:p-[1.125rem]"
           >
             {/* Illustration */}
-            <div className="relative flex h-[4.6rem] w-[4.6rem] shrink-0 items-center justify-center">
+            <div className="relative flex h-14 w-14 shrink-0 items-center justify-center sm:h-[4.6rem] sm:w-[4.6rem]">
               <span
                 aria-hidden="true"
                 className="absolute inset-0 rounded-full border border-brand-100 opacity-70 transition-transform duration-300 group-hover:scale-110"
               />
               <span
                 aria-hidden="true"
-                className="absolute inset-2.5 rounded-full border border-dashed border-brand-200 opacity-60"
+                className="absolute inset-2 rounded-full border border-dashed border-brand-200 opacity-60 sm:inset-2.5"
               />
-              <Icon className="relative h-8 w-8 text-brand-600" strokeWidth={1.5} aria-hidden="true" />
+              <Icon className="relative h-6 w-6 text-brand-600 sm:h-8 sm:w-8" strokeWidth={1.5} aria-hidden="true" />
             </div>
 
             <div className="flex min-w-0 flex-1 flex-col">
-              <h3 className="text-[15px] font-extrabold leading-snug text-ink">
+              <h3 className="text-[13px] font-extrabold leading-snug text-ink sm:text-[15px]">
                 {headline[0]}
                 <span className="text-brand-600">{headline[1]}</span>
                 {headline[2]}
               </h3>
               <span aria-hidden="true" className="mt-1.5 h-0.5 w-7 rounded-full bg-brand-600" />
-              <p className="mt-2 text-[13px] leading-relaxed text-ink-soft">
+              <p className="mt-2 text-[11.5px] leading-relaxed text-ink-soft sm:text-[13px]">
                 {lines.map((line) => (
                   <span key={line} className="block">
                     {line}
@@ -94,9 +96,9 @@ export function InfoCards() {
                   scrollTo(targetId, focusTracking ? requestTrackingFocus : undefined)
                 }
                 aria-label={`Learn more: ${headline.join("")}`}
-                className="mt-auto flex h-8 w-8 items-center justify-center self-end rounded-full border border-canvas-line bg-white text-brand-600 shadow-soft transition-all duration-200 hover:bg-brand-600 hover:text-white group-hover:translate-x-0.5"
+                className="mt-auto flex h-7 w-7 items-center justify-center self-end rounded-full border border-canvas-line bg-white text-brand-600 shadow-soft transition-all duration-200 hover:bg-brand-600 hover:text-white group-hover:translate-x-0.5 sm:h-8 sm:w-8"
               >
-                <ArrowRight className="h-4 w-4" strokeWidth={2} />
+                <ArrowRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" strokeWidth={2} />
               </button>
             </div>
           </motion.article>

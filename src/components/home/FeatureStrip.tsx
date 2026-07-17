@@ -16,39 +16,45 @@ const FEATURES: Feature[] = [
 ];
 
 /**
- * Feature strip — four equal columns in a single rounded white bar,
- * circular outlined icons, vertical hairline separators, hover lift.
+ * Feature strip.
+ * Mobile: compact 2×2 grid (centered, stacked icon/text) — half the height
+ * of four stacked rows. Desktop: original single row of four.
+ * Hairline separators come from a 1px gap over the line color, which gives
+ * clean dividers in both directions at every breakpoint.
  */
 export function FeatureStrip() {
   return (
-    <section aria-label="Service guarantees" className="shell -mt-2 pb-8">
+    <section aria-label="Service guarantees" className="shell pb-6 sm:pb-8 [content-visibility:auto] [contain-intrinsic-size:auto_320px]">
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-60px" }}
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        className="card grid grid-cols-1 divide-y divide-canvas-line sm:grid-cols-2 sm:divide-y-0 lg:grid-cols-4 lg:divide-x"
+        className="card overflow-hidden"
       >
-        {FEATURES.map(({ icon: Icon, title, lines }) => (
-          <div
-            key={title}
-            className="group flex items-center gap-3.5 px-5 py-5 transition-transform duration-200 hover:-translate-y-0.5 sm:px-6"
-          >
-            <span className="flex h-[3.4rem] w-[3.4rem] shrink-0 items-center justify-center rounded-full border-2 border-brand-100 bg-white text-brand-600 transition-colors duration-200 group-hover:border-brand-300">
-              <Icon className="h-6 w-6" strokeWidth={1.8} aria-hidden="true" />
-            </span>
-            <div>
-              <h3 className="text-sm font-extrabold uppercase tracking-wide text-ink">
-                {title}
-              </h3>
-              <p className="mt-1 text-[13px] leading-snug text-ink-soft">
-                {lines[0]}
-                <br />
-                {lines[1]}
-              </p>
+        <div className="grid grid-cols-2 gap-px bg-canvas-line lg:grid-cols-4">
+          {FEATURES.map(({ icon: Icon, title, lines }) => (
+            <div
+              key={title}
+              className="group flex flex-col items-center gap-2.5 bg-white px-3 py-4 text-center transition-transform duration-200 hover:-translate-y-0.5 sm:flex-row sm:items-center sm:gap-3.5 sm:px-5 sm:py-5 sm:text-left"
+            >
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-brand-100 bg-white text-brand-600 transition-colors duration-200 group-hover:border-brand-300 sm:h-[3.4rem] sm:w-[3.4rem]">
+                <Icon className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={1.8} aria-hidden="true" />
+              </span>
+              <div>
+                <h3 className="text-[11.5px] font-extrabold uppercase tracking-wide text-ink sm:text-sm">
+                  {title}
+                </h3>
+                <p className="mt-0.5 text-[11px] leading-snug text-ink-soft sm:mt-1 sm:text-[13px]">
+                  {lines[0]}
+                  <br className="hidden sm:block" />
+                  <span className="sm:hidden"> </span>
+                  {lines[1]}
+                </p>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </motion.div>
     </section>
   );

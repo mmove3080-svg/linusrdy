@@ -39,6 +39,19 @@ function USDeliveryMapInner() {
   const dragState = useRef<{ startX: number; startY: number; tx: number; ty: number } | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
+  // ── Mobile readability/perf: scale markers, cards, labels up on small
+  // screens (the SVG shrinks ~2.5x there) and skip the costly glow filter. ──
+  const [k, setK] = useState(1);
+  const kRef = useRef(1);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 640px)");
+    const apply = () => setK(mq.matches ? 1.55 : 1);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
+  kRef.current = k;
+
   const reduced = useMemo(
     () =>
       typeof window !== "undefined" &&
@@ -85,7 +98,7 @@ function USDeliveryMapInner() {
       pathEl.setAttribute("stroke-dashoffset", String(length * (1 - eased)));
       const pt = pathEl.getPointAtLength(length * eased);
       beaconPos.current = { x: pt.x, y: pt.y };
-      pin.setAttribute("transform", `translate(${pt.x}, ${pt.y})`);
+      pin.setAttribute("transform", `translate(${pt.x}, ${pt.y}) scale(${kRef.current})`);
       pin.style.opacity = t > 0.02 && t < 0.99 ? "1" : "0";
 
       if (t < 1) {
@@ -242,7 +255,7 @@ function USDeliveryMapInner() {
                   x={s.cx}
                   y={s.cy}
                   textAnchor="middle"
-                  fontSize={small ? 7.5 : 12}
+                  fontSize={(small ? 7.5 : 12) * (k > 1 ? 1.3 : 1)}
                   fontWeight={600}
                   fill="#9AA7BD"
                   letterSpacing="0.06em"
@@ -259,25 +272,32 @@ function USDeliveryMapInner() {
             d={journey.path}
             fill="none"
             stroke="url(#route-stroke)"
-            strokeWidth="3.6"
+            strokeWidth={3.6 * k}
             strokeLinecap="round"
-            filter="url(#route-glow)"
+            filter={k > 1 ? undefined : "url(#route-glow)"}
           />
 
-          <OriginMarker x={journey.origin.x} y={journey.origin.y} />
+          <g transform={`translate(${journey.origin.x} ${journey.origin.y}) scale(${k})`}>
+            <OriginMarker x={0} y={0} />
+          </g>
           <StatusCard
             x={journey.origin.x}
             y={originLabelY}
             label="From"
             value={journey.originState}
             accent="blue"
+            k={k}
           />
 
           {phase === "traveling" ? (
-            <DestinationMarker x={destX} y={destY} />
+            <g transform={`translate(${destX} ${destY}) scale(${k})`}>
+              <DestinationMarker x={0} y={0} />
+            </g>
           ) : (
             <>
-              <DeliveredMarker x={destX} y={destY} />
+              <g transform={`translate(${destX} ${destY}) scale(${k})`}>
+                <DeliveredMarker x={0} y={0} />
+              </g>
               <StatusCard
                 x={destX}
                 y={destY}
@@ -285,6 +305,7 @@ function USDeliveryMapInner() {
                 value={`${journey.dest.city}, ${journey.dest.state}`}
                 accent="green"
                 fadeIn
+                k={k}
               />
             </>
           )}

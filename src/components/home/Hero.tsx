@@ -28,9 +28,9 @@ export function Hero({ onTrack, trackingLoading }: HeroProps) {
     <section
       id={SECTION_IDS.home}
       aria-label="Home"
-      className="relative overflow-hidden bg-white pb-8 pt-28 sm:pt-32"
+      className="relative overflow-hidden bg-white pb-6 pt-24 sm:pb-8 sm:pt-32"
     >
-      <div className="shell relative grid items-center gap-8 lg:grid-cols-[0.42fr_0.58fr]">
+      <div className="shell relative grid items-center gap-6 lg:grid-cols-[0.42fr_0.58fr] lg:gap-8">
         {/* ── Left column ── */}
         <div className="relative z-10">
           <motion.h1
@@ -61,7 +61,7 @@ export function Hero({ onTrack, trackingLoading }: HeroProps) {
             animate="show"
             custom={2}
             id={SECTION_IDS.track}
-            className="mt-7 scroll-mt-28"
+            className="mt-6 scroll-mt-28 sm:mt-7"
           >
             <TrackingCard onTrack={onTrack} loading={trackingLoading} />
           </motion.div>
@@ -72,7 +72,7 @@ export function Hero({ onTrack, trackingLoading }: HeroProps) {
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="relative h-[300px] w-full sm:h-[380px] lg:h-[460px]"
+          className="relative h-[240px] w-full sm:h-[380px] lg:h-[460px]"
         >
           <USDeliveryMap />
         </motion.div>

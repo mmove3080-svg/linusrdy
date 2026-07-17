@@ -54,7 +54,7 @@ export function TrackingCard({ onTrack, loading = false }: TrackingCardProps) {
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && submit()}
-          className="min-w-0 flex-1 bg-transparent px-2 text-[15px] font-medium text-ink outline-none ring-0 placeholder:text-ink-faint focus-visible:ring-0"
+          className="min-w-0 flex-1 bg-transparent px-2 text-[15px] font-semibold text-ink outline-none ring-0 placeholder:text-ink-faint focus-visible:ring-0"
         />
         <button
           type="button"

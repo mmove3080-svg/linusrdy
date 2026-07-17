@@ -7,7 +7,7 @@ import { ShieldCheck } from "lucide-react";
  */
 export function BottomBanner() {
   return (
-    <section aria-label="Our guarantee" className="shell pb-14">
+    <section aria-label="Our guarantee" className="shell pb-10 sm:pb-14 [content-visibility:auto] [contain-intrinsic-size:auto_140px]">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
