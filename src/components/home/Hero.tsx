@@ -72,7 +72,7 @@ export function Hero({ onTrack, trackingLoading }: HeroProps) {
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.2, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="relative min-h-[300px] sm:min-h-[380px] lg:min-h-[460px]"
+          className="relative h-[300px] w-full sm:h-[380px] lg:h-[460px]"
         >
           <USDeliveryMap />
         </motion.div>
