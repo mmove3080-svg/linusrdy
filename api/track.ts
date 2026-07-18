@@ -50,7 +50,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   const shipmentsTable = process.env.AIRTABLE_SHIPMENTS_TABLE ?? "Shipments";
   const eventsTable = process.env.AIRTABLE_EVENTS_TABLE ?? "Shipment Events";
 
-  if (!AIRTABLE_API_KEY || !AIRTABLE_BASE_ID || !MAPBOX_SERVER_TOKEN) {
+  if (!AIRTABLE_API_KEY || !AIRTABLE_BASE_ID) {
     console.error("Missing required environment variables");
     return res.status(500).json({ error: "Server configuration error.", code: "SERVER_ERROR" });
   }
@@ -79,13 +79,22 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       AIRTABLE_API_KEY,
     );
 
-    // 3 ── Driving route (origin → destination)
+    // 3 ── Driving route (origin → destination). Mapbox is OPTIONAL: without
+    // a token (or if Directions fails) we return null and the frontend draws
+    // an elegant curved route between the coordinates instead.
     const origin: [number, number] = [num(f["Origin Longitude"]), num(f["Origin Latitude"])];
     const destination: [number, number] = [
       num(f["Destination Longitude"]),
       num(f["Destination Latitude"]),
     ];
-    const route = await fetchRoute(origin, destination, MAPBOX_SERVER_TOKEN);
+    let route: Awaited<ReturnType<typeof fetchRoute>> | null = null;
+    if (MAPBOX_SERVER_TOKEN) {
+      try {
+        route = await fetchRoute(origin, destination, MAPBOX_SERVER_TOKEN);
+      } catch (routeErr) {
+        console.warn("Mapbox Directions unavailable, using curved fallback:", routeErr);
+      }
+    }
 
     // 4 ── Combined payload
     const payload = {
@@ -116,6 +125,15 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
           city: str(f["Current City"]) || undefined,
         },
         packageDetails: str(f["Package Details"]) || undefined,
+        senderName: str(f["Sender Name"]) || undefined,
+        receiverName: str(f["Receiver Name"]) || undefined,
+        shippingMethod: str(f["Shipping Method"]) || undefined,
+        reference: str(f["Reference"]) || undefined,
+        shipmentDate: str(f["Shipment Date"]) || undefined,
+        deliveryWindow: str(f["Delivery Window"]) || undefined,
+        weightLabel: str(f["Weight"]) || undefined,
+        dimensionsLabel: str(f["Dimensions"]) || undefined,
+        packagePhotoUrl: attachmentUrl(f["Package Photo"]),
         timeline: events
           .map((r, i) => ({
             id: r.id,
@@ -200,6 +218,13 @@ async function fetchRoute(
     distance: route.distance,
     duration: route.duration,
   };
+}
+
+function attachmentUrl(v: unknown): string | undefined {
+  if (Array.isArray(v) && v[0] && typeof v[0] === "object" && "url" in (v[0] as object)) {
+    return String((v[0] as { url: unknown }).url);
+  }
+  return undefined;
 }
 
 function str(v: unknown): string {
