@@ -3,6 +3,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Hero } from "@/components/home/Hero";
 import { FeatureStrip } from "@/components/home/FeatureStrip";
 import { TrackingDashboard } from "@/components/tracking/TrackingDashboard";
+import { LoadingSkeleton } from "@/components/tracking/LoadingSkeleton";
 import { SECTION_IDS } from "@/lib/constants";
 import { useTracking } from "@/hooks/useTracking";
 
@@ -40,6 +41,12 @@ export default function App() {
           trackingLoading={state.status === "loading"}
           trackingError={state.status === "error" ? state.message : undefined}
         />
+
+        {state.status === "loading" && (
+          <section aria-label="Loading tracking results" className="shell pb-10">
+            <LoadingSkeleton />
+          </section>
+        )}
 
         {state.status === "success" && (
           <section
