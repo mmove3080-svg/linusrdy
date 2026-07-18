@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Hero } from "@/components/home/Hero";
 import { FeatureStrip } from "@/components/home/FeatureStrip";
+import { ServicesSection } from "@/components/home/services/ServicesSection";
 import { TrackingDashboard } from "@/components/tracking/TrackingDashboard";
 import { LoadingSkeleton } from "@/components/tracking/LoadingSkeleton";
 import { SECTION_IDS } from "@/lib/constants";
@@ -60,8 +61,9 @@ export default function App() {
 
         <FeatureStrip />
 
+        <ServicesSection />
+
         {/* Later sections */}
-        <section id={SECTION_IDS.whatWeDo} aria-label="What we do" className="scroll-mt-28" />
         <section id={SECTION_IDS.whyChooseUs} aria-label="Why choose us" className="scroll-mt-28" />
         <section id={SECTION_IDS.reviews} aria-label="Customer reviews" className="scroll-mt-28" />
       </main>
