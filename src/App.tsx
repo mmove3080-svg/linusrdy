@@ -5,6 +5,7 @@ import { FeatureStrip } from "@/components/home/FeatureStrip";
 import { ServicesSection } from "@/components/home/services/ServicesSection";
 import { TrackingDashboard } from "@/components/tracking/TrackingDashboard";
 import { LoadingSkeleton } from "@/components/tracking/LoadingSkeleton";
+import { SciFiBackdrop } from "@/components/ui/SciFiBackdrop";
 import { SECTION_IDS } from "@/lib/constants";
 import { useTracking } from "@/hooks/useTracking";
 
@@ -44,8 +45,11 @@ export default function App() {
         />
 
         {state.status === "loading" && (
-          <section aria-label="Loading tracking results" className="shell pb-10">
-            <LoadingSkeleton />
+          <section aria-label="Loading tracking results" className="relative overflow-hidden pb-10">
+            <SciFiBackdrop intensity="soft" />
+            <div className="shell relative">
+              <LoadingSkeleton />
+            </div>
           </section>
         )}
 
@@ -53,9 +57,12 @@ export default function App() {
           <section
             ref={resultsRef}
             aria-label="Tracking results"
-            className="shell scroll-mt-24 pb-10"
+            className="relative scroll-mt-24 overflow-hidden pb-10"
           >
-            <TrackingDashboard data={state.data} />
+            <SciFiBackdrop intensity="soft" />
+            <div className="shell relative">
+              <TrackingDashboard data={state.data} />
+            </div>
           </section>
         )}
 

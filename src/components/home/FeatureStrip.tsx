@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { ShieldCheck, Clock, Lock, Globe } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { SciFiBackdrop } from "@/components/ui/SciFiBackdrop";
 
 interface Feature {
   icon: LucideIcon;
@@ -24,7 +25,9 @@ const FEATURES: Feature[] = [
  */
 export function FeatureStrip() {
   return (
-    <section aria-label="Service guarantees" className="shell pb-10 sm:pb-14">
+    <section aria-label="Service guarantees" className="relative overflow-hidden pb-10 sm:pb-14">
+      <SciFiBackdrop intensity="soft" flip />
+      <div className="shell relative">
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -56,6 +59,7 @@ export function FeatureStrip() {
           ))}
         </div>
       </motion.div>
+      </div>
     </section>
   );
 }
