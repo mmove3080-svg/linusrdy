@@ -15,7 +15,7 @@ export function ServicesSection() {
     <section
       id={SECTION_IDS.whatWeDo}
       aria-label="What we do"
-      className="relative scroll-mt-24 overflow-hidden bg-white py-14 lg:py-20"
+      className="relative scroll-mt-24 overflow-hidden bg-white py-9 lg:py-12"
     >
       <SciFiBackdrop />
 
@@ -31,7 +31,7 @@ export function ServicesSection() {
 
       <div className="shell relative">
         <SectionHeader />
-        <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:mt-10 lg:gap-5 xl:grid-cols-3">
+        <div className="mt-6 grid grid-cols-2 gap-2.5 sm:gap-4 lg:mt-8 xl:grid-cols-3">
           {SERVICES.map((service, i) => (
             <ServiceCard key={service.number} service={service} index={i} />
           ))}
