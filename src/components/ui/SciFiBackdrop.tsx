@@ -86,18 +86,26 @@ export function SciFiBackdrop({ intensity = "full", flip = false }: SciFiBackdro
             viewBox="0 0 150 150"
             fill="none"
           >
-            <circle cx="75" cy="75" r="64" stroke={LINE_SOFT} strokeWidth="1" opacity="0.7" />
-            <circle cx="75" cy="75" r="50" stroke={LINE} strokeWidth="1.1" opacity="0.8" />
-            <circle
-              cx="75" cy="75" r="36"
-              stroke={LINE} strokeWidth="6" opacity="0.5"
-              strokeDasharray="140 200" strokeLinecap="round"
-            />
-            <circle cx="75" cy="75" r="22" stroke={LINE} strokeWidth="1.1" />
-            <path d="M75 5v14M75 131v14M5 75h14M131 75h14" stroke={LINE_SOFT} strokeWidth="1" />
-            <path d="M75 75l16-22" stroke={NODE} strokeWidth="1.3" strokeLinecap="round" />
-            <circle cx="75" cy="75" r="2.2" fill={NODE} />
-            <circle cx="139" cy="52" r="1.6" fill={LINE} />
+            {/* Entire HUD rotates 360° continuously — linear, seamless, GPU-composited.
+                Pivot fixed at the circle center (75,75). Honors prefers-reduced-motion
+                via the global reduced-motion rules in index.css. */}
+            <g
+              className="animate-[spin_14s_linear_infinite]"
+              style={{ transformOrigin: "75px 75px", willChange: "transform" }}
+            >
+              <circle cx="75" cy="75" r="64" stroke={LINE_SOFT} strokeWidth="1" opacity="0.7" />
+              <circle cx="75" cy="75" r="50" stroke={LINE} strokeWidth="1.1" opacity="0.8" />
+              <circle
+                cx="75" cy="75" r="36"
+                stroke={LINE} strokeWidth="6" opacity="0.5"
+                strokeDasharray="140 200" strokeLinecap="round"
+              />
+              <circle cx="75" cy="75" r="22" stroke={LINE} strokeWidth="1.1" />
+              <path d="M75 5v14M75 131v14M5 75h14M131 75h14" stroke={LINE_SOFT} strokeWidth="1" />
+              <path d="M75 75l16-22" stroke={NODE} strokeWidth="1.3" strokeLinecap="round" />
+              <circle cx="75" cy="75" r="2.2" fill={NODE} />
+              <circle cx="139" cy="52" r="1.6" fill={LINE} />
+            </g>
           </svg>
 
           {/* ── Top-right: dotted row leading to the radar ── */}
