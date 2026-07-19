@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, MessageSquareQuote } from "lucide-react";
 import { ReviewCard } from "./ReviewCard";
@@ -6,6 +6,7 @@ import { StatisticsBar } from "./StatisticsBar";
 import { REVIEWS } from "./reviewsData";
 import { SECTION_IDS } from "@/lib/constants";
 import { SciFiBackdrop } from "@/components/ui/SciFiBackdrop";
+import happyCustomers from "@/assets/happy-customers.webp";
 
 /**
  * "Customers Review — What Our Customers Say".
@@ -15,12 +16,40 @@ import { SciFiBackdrop } from "@/components/ui/SciFiBackdrop";
  */
 export function ReviewsSection() {
   const trackRef = useRef<HTMLDivElement>(null);
+  const [atStart, setAtStart] = useState(true);
+  const [atEnd, setAtEnd] = useState(false);
 
-  const scrollByPage = useCallback((dir: 1 | -1) => {
+  // Bounded navigation: track scroll position so controls disable at the edges
+  // and the carousel can never advance into empty space.
+  useEffect(() => {
     const track = trackRef.current;
     if (!track) return;
-    track.scrollBy({ left: dir * track.clientWidth, behavior: "smooth" });
+    const update = () => {
+      const tolerance = 4;
+      setAtStart(track.scrollLeft <= tolerance);
+      setAtEnd(track.scrollLeft >= track.scrollWidth - track.clientWidth - tolerance);
+    };
+    update();
+    track.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      track.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
   }, []);
+
+  const scrollByPage = useCallback(
+    (dir: 1 | -1) => {
+      const track = trackRef.current;
+      if (!track) return;
+      if (dir === 1 && atEnd) return;
+      if (dir === -1 && atStart) return;
+      const max = track.scrollWidth - track.clientWidth;
+      const target = Math.min(max, Math.max(0, track.scrollLeft + dir * track.clientWidth));
+      track.scrollTo({ left: target, behavior: "smooth" });
+    },
+    [atStart, atEnd],
+  );
 
   return (
     <section
@@ -28,7 +57,17 @@ export function ReviewsSection() {
       aria-label="Customer reviews"
       className="relative scroll-mt-24 overflow-hidden bg-white py-9 lg:py-12"
     >
-      <SciFiBackdrop flip />
+      <SciFiBackdrop flip radar={false} />
+
+      {/* ── Happy customers illustration (from the reference artwork), top-right,
+             gently floating — elegant ambient motion, reduced-motion aware ── */}
+      <img
+        src={happyCustomers}
+        alt=""
+        aria-hidden="true"
+        loading="lazy"
+        className="pointer-events-none absolute -top-2 right-0 w-[46%] max-w-[430px] animate-float-slow opacity-70 [mask-image:radial-gradient(72%_78%_at_58%_38%,black_55%,transparent)] sm:w-[36%] lg:-top-4 lg:opacity-80"
+      />
 
       <div className="shell relative">
         {/* ── Header ── */}
@@ -68,12 +107,12 @@ export function ReviewsSection() {
 
         {/* ── Carousel ── */}
         <div className="relative mt-6 lg:mt-8">
-          <CarouselControl side="left" onClick={() => scrollByPage(-1)} />
-          <CarouselControl side="right" onClick={() => scrollByPage(1)} />
+          <CarouselControl side="left" onClick={() => scrollByPage(-1)} disabled={atStart} />
+          <CarouselControl side="right" onClick={() => scrollByPage(1)} disabled={atEnd} />
 
           <div
             ref={trackRef}
-            className="flex snap-x snap-mandatory gap-2.5 overflow-x-auto scroll-smooth px-0.5 pb-2 sm:gap-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="flex snap-x snap-mandatory gap-2.5 overflow-x-auto overscroll-x-contain scroll-smooth px-0.5 pb-2 sm:gap-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             role="region"
             aria-label="Customer reviews carousel"
             tabIndex={0}
@@ -99,16 +138,28 @@ export function ReviewsSection() {
 }
 
 /** Pulsing chevron control — gentle scale + glow loop signals interactivity. */
-function CarouselControl({ side, onClick }: { side: "left" | "right"; onClick: () => void }) {
+function CarouselControl({
+  side,
+  onClick,
+  disabled,
+}: {
+  side: "left" | "right";
+  onClick: () => void;
+  disabled: boolean;
+}) {
   const Icon = side === "left" ? ChevronLeft : ChevronRight;
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       aria-label={side === "left" ? "Previous reviews" : "Next reviews"}
-      className={`absolute top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 animate-pulse-soft items-center justify-center rounded-full border border-[#E6E9FF] bg-white/95 text-[#5A5BF7] shadow-card backdrop-blur transition-colors duration-200 hover:border-[#C9DCFF] hover:bg-white hover:text-[#6C2EFF] sm:h-9 sm:w-9 ${
-        side === "left" ? "-left-1.5 sm:-left-3" : "-right-1.5 sm:-right-3"
-      }`}
+      aria-disabled={disabled}
+      className={`absolute top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-[#E6E9FF] bg-white/95 text-[#5A5BF7] shadow-card backdrop-blur transition-all duration-200 sm:h-9 sm:w-9 ${
+        disabled
+          ? "cursor-default opacity-35"
+          : "animate-pulse-soft hover:border-[#C9DCFF] hover:bg-white hover:text-[#6C2EFF]"
+      } ${side === "left" ? "-left-1.5 sm:-left-3" : "-right-1.5 sm:-right-3"}`}
     >
       <Icon className="h-4 w-4 sm:h-[18px] sm:w-[18px]" strokeWidth={2.4} aria-hidden="true" />
     </button>

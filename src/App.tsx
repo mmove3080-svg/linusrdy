@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Navbar } from "@/components/layout/Navbar";
+import { Footer } from "@/components/layout/Footer";
 import { Hero } from "@/components/home/Hero";
 import { FeatureStrip } from "@/components/home/FeatureStrip";
 import { ServicesSection } from "@/components/home/services/ServicesSection";
@@ -76,6 +77,7 @@ export default function App() {
         {/* Later sections */}
         <section id={SECTION_IDS.whyChooseUs} aria-label="Why choose us" className="scroll-mt-28" />
       </main>
+      <Footer />
     </div>
   );
 }

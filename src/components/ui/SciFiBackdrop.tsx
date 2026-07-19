@@ -3,6 +3,8 @@ interface SciFiBackdropProps {
   intensity?: "soft" | "full";
   /** mirrors the composition so adjacent sections don't repeat identically */
   flip?: boolean;
+  /** show the rotating radar HUD (a section may replace it with its own art) */
+  radar?: boolean;
 }
 
 const LINE = "#C6D1E9";
@@ -17,7 +19,7 @@ const GLOW = "#2D8CFF";
  * glowing blue accents. All pinned to the edges — the center stays clean.
  * Pure SVG/CSS, zero animation cost. Parent must be `relative overflow-hidden`.
  */
-export function SciFiBackdrop({ intensity = "full", flip = false }: SciFiBackdropProps) {
+export function SciFiBackdrop({ intensity = "full", flip = false, radar = true }: SciFiBackdropProps) {
   const dim = intensity === "soft" ? "opacity-60" : "";
   return (
     <div
@@ -78,7 +80,7 @@ export function SciFiBackdrop({ intensity = "full", flip = false }: SciFiBackdro
         ))}
       </div>
 
-      {intensity === "full" && (
+      {intensity === "full" && radar && (
         <>
           {/* ── Top-right: concentric radar HUD ── */}
           <svg

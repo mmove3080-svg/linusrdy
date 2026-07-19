@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Users, Package, Globe, ShieldCheck, Headphones } from "lucide-react";
+import { Users, Package, Globe, ShieldCheck } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { STATISTICS, type Statistic } from "./reviewsData";
 import { useCountUp } from "@/hooks/useCountUp";
@@ -9,7 +9,6 @@ const ICONS: Record<Statistic["icon"], LucideIcon> = {
   package: Package,
   globe: Globe,
   shield: ShieldCheck,
-  support: Headphones,
 };
 
 /**
@@ -25,7 +24,7 @@ export function StatisticsBar() {
       transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
       className="card overflow-hidden rounded-2xl"
     >
-      <div className="grid grid-cols-2 gap-px bg-canvas-line sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-px bg-canvas-line lg:grid-cols-4">
         {STATISTICS.map((stat) => (
           <StatisticItem key={stat.label} stat={stat} />
         ))}
@@ -44,7 +43,7 @@ function StatisticItem({ stat }: { stat: Statistic }) {
       : value.toLocaleString("en-US");
 
   return (
-    <div className="flex items-center gap-2.5 bg-white px-3 py-3 last:col-span-2 sm:last:col-span-1 sm:px-4">
+    <div className="flex items-center gap-2.5 bg-white px-3 py-3 sm:px-4">
       {/* Hexagonal gradient-outline icon chip */}
       <span
         className="flex h-9 w-9 shrink-0 items-center justify-center bg-gradient-to-br from-[#2D8CFF]/60 to-[#6C2EFF]/60 p-px"
