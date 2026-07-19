@@ -87,12 +87,17 @@ export default {
           from: { opacity: "0", transform: "translateY(16px)" },
           to: { opacity: "1", transform: "translateY(0)" },
         },
+        "pulse-soft": {
+          "0%, 100%": { transform: "scale(1)", boxShadow: "0 0 0 0 rgba(45,140,255,0)" },
+          "50%": { transform: "scale(1.06)", boxShadow: "0 0 10px 2px rgba(45,140,255,0.22)" },
+        },
       },
       animation: {
         "pin-pulse": "pin-pulse 2.4s cubic-bezier(0.16,1,0.3,1) infinite",
         "float-slow": "float-slow 7s ease-in-out infinite",
         suspension: "suspension 3.2s ease-in-out infinite",
         "fade-up": "fade-up 0.6s cubic-bezier(0.16,1,0.3,1) both",
+        "pulse-soft": "pulse-soft 2.4s ease-in-out infinite",
       },
       maxWidth: {
         shell: "80rem", // 1280px content shell
