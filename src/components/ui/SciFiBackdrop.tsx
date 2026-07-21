@@ -84,7 +84,7 @@ export function SciFiBackdrop({ intensity = "full", flip = false, radar = true }
         <>
           {/* ── Top-right: concentric radar HUD ── */}
           <svg
-            className="absolute -top-4 right-8 h-[150px] w-[150px] sm:right-14"
+            className="absolute right-2 top-2 h-[92px] w-[92px] sm:-top-4 sm:right-14 sm:h-[150px] sm:w-[150px]"
             viewBox="0 0 150 150"
             fill="none"
           >
