@@ -34,4 +34,5 @@ export const NAV_LINKS: NavLink[] = [
 /** Height (px) reserved for the sticky navbar when computing scroll offsets. */
 export const NAV_OFFSET = 92;
 
-export const TRACKING_NUMBER_PATTERN = /^[A-Z]{2,4}\d{6,12}$/i;
+/** Mirrors the server-side check in api/track.ts — permissive on format. */
+export const TRACKING_NUMBER_PATTERN = /^[A-Z0-9][A-Z0-9-]{2,38}[A-Z0-9]$/i;

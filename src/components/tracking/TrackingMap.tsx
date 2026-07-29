@@ -1,50 +1,43 @@
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { US_STATES, US_MAP_W, US_MAP_H } from "@/components/home/usMapGeo";
 import { STATE_ABBR, SMALL_LABEL_STATES } from "@/components/home/map/stateAbbr";
-import { curvedPath, easeInOut } from "@/components/home/map/journeyEngine";
+import { easeInOut } from "@/components/home/map/journeyEngine";
 import { StatusCard } from "@/components/home/map/StatusCard";
-import {
-  OriginMarker,
-  CurrentPin,
-  DestinationMarker,
-  DeliveredMarker,
-} from "@/components/home/map/MapMarkers";
+import { OriginMarker, CurrentPin, DeliveredMarker } from "@/components/home/map/MapMarkers";
 import { ZoomControls } from "@/components/home/map/ZoomControls";
 import { useMapCamera } from "@/components/home/map/useMapCamera";
 import { useMapScale } from "@/components/home/map/useMapScale";
 import { projectLatLng } from "@/utils/projection";
 import { formatPlace } from "@/utils/format";
 import type { Shipment, RouteData } from "@/types/shipment";
+import type { ShipmentJourney } from "@/hooks/useShipmentJourney";
 
 const ROUTE_BLUE = "#2E9BFF";
 
 interface TrackingMapProps {
   shipment: Shipment;
   route: RouteData | null;
+  /** The single source of truth — supplied by the dashboard, never recomputed. */
+  journey: ShipmentJourney;
 }
 
 /**
- * TrackingMap — the customer's real shipment on the branded US map.
+ * TrackingMap — plots the shipment's TRAVELED journey.
  *
- * Identical visual language to the homepage network map (same landmass,
- * labels, markers, cards, camera). Differences in behavior:
- *  - Origin/destination come from the shipment's actual Airtable coordinates.
- *  - If the API supplied a real driving route (Mapbox), it is projected and
- *    drawn; otherwise an elegant curved arc is used.
- *  - On mount, the route draws and the pin travels ONCE to exactly the
- *    shipment's Progress percentage, then rests there.
+ * Position logic lives entirely in `useShipmentJourney`; this component only
+ * renders what that hook resolved:
+ *   - polyline = journey.traveledRoute (completed steps only)
+ *   - marker   = the final coordinate of traveledRoute (= currentStep.point)
+ *   - popup    = journey.currentStep
+ * No remaining route is drawn, and nothing here recalculates progress.
  */
-function TrackingMapInner({ shipment, route }: TrackingMapProps) {
-  const routeRef = useRef<SVGPathElement>(null);
+function TrackingMapInner({ shipment, route, journey }: TrackingMapProps) {
+  const pathRef = useRef<SVGPathElement>(null);
   const pinRef = useRef<SVGGElement>(null);
   const [settled, setSettled] = useState(false);
-  const [pinPoint, setPinPoint] = useState<{ x: number; y: number } | null>(null);
 
   const { k, kRef } = useMapScale();
   const cam = useMapCamera();
-
-  const delivered = shipment.progress >= 100 || shipment.status === "Delivered";
-  const fraction = Math.min(Math.max(shipment.progress, 0), 100) / 100;
 
   const reduced = useMemo(
     () =>
@@ -53,36 +46,42 @@ function TrackingMapInner({ shipment, route }: TrackingMapProps) {
     [],
   );
 
-  // ── Project shipment geography onto the map ──
+  // ── Project the traveled journey onto the map ──
   const geometry = useMemo(() => {
-    const origin = projectLatLng(shipment.origin.lat, shipment.origin.lng);
-    const dest = projectLatLng(shipment.destination.lat, shipment.destination.lng);
-    if (!origin || !dest) return null; // outside the US projection
+    const projected = journey.traveledRoute
+      .map(([lng, lat]) => projectLatLng(lat, lng))
+      .filter((p): p is [number, number] => p !== null);
+    if (projected.length === 0) return null;
 
+    // With real driving geometry available, follow the road for the traveled
+    // portion; otherwise connect the scan points directly.
     let path: string;
-    if (route && route.geometry.length > 1) {
-      const pts = route.geometry
+    if (route && route.geometry.length > 1 && journey.steps.length > 1) {
+      const fraction = journey.currentIndex / (journey.steps.length - 1);
+      const cut = Math.max(2, Math.round(route.geometry.length * fraction));
+      const roadPoints = route.geometry
+        .slice(0, cut)
         .map(([lng, lat]) => projectLatLng(lat, lng))
         .filter((p): p is [number, number] => p !== null);
       path =
-        pts.length > 1
-          ? `M ${pts.map(([x, y]) => `${x} ${y}`).join(" L ")}`
-          : curvedPath({ x: origin[0], y: origin[1] }, { x: dest[0], y: dest[1] }, 0);
+        roadPoints.length > 1
+          ? `M ${roadPoints.map(([x, y]) => `${x} ${y}`).join(" L ")}`
+          : polyline(projected);
     } else {
-      path = curvedPath({ x: origin[0], y: origin[1] }, { x: dest[0], y: dest[1] }, 0);
+      path = polyline(projected);
     }
-    return { origin, dest, path };
-  }, [shipment, route]);
 
-  // ── One-shot animation to the shipment's exact progress ──
+    return { path, points: projected, end: projected[projected.length - 1] };
+  }, [journey, route]);
+
+  // ── Draw the traveled route, then rest the marker at its final point ──
   useEffect(() => {
-    const pathEl = routeRef.current;
+    const pathEl = pathRef.current;
     const pin = pinRef.current;
     if (!pathEl || !pin || !geometry) return;
 
     setSettled(false);
     const length = pathEl.getTotalLength();
-    const target = length * fraction;
     pathEl.setAttribute("stroke-dasharray", String(length));
     pathEl.setAttribute("stroke-dashoffset", String(length));
     pin.style.opacity = "0";
@@ -91,25 +90,19 @@ function TrackingMapInner({ shipment, route }: TrackingMapProps) {
     const duration = reduced ? 1 : 1900;
     const start = performance.now();
 
-    const finish = () => {
-      const pt = pathEl.getPointAtLength(target);
-      setPinPoint({ x: pt.x, y: pt.y });
-      setSettled(true);
-    };
-
     const step = (now: number) => {
       const t = Math.min((now - start) / duration, 1);
-      const eased = easeInOut(t) * fraction;
+      const eased = easeInOut(t);
       pathEl.setAttribute("stroke-dashoffset", String(length * (1 - eased)));
       const pt = pathEl.getPointAtLength(length * eased);
       pin.setAttribute("transform", `translate(${pt.x}, ${pt.y}) scale(${kRef.current})`);
-      if (!delivered) pin.style.opacity = fraction > 0 ? "1" : "0";
+      if (!journey.delivered) pin.style.opacity = "1";
       if (t < 1) raf = requestAnimationFrame(step);
-      else finish();
+      else setSettled(true);
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [geometry, fraction, delivered, reduced, kRef]);
+  }, [geometry, journey.delivered, reduced, kRef]);
 
   if (!geometry) {
     return (
@@ -120,15 +113,16 @@ function TrackingMapInner({ shipment, route }: TrackingMapProps) {
     );
   }
 
-  const [ox, oy] = geometry.origin;
-  const [dx, dy] = geometry.dest;
+  const originPoint = geometry.points[0];
+  const currentPoint = geometry.end;
+  const current = journey.currentStep;
 
   return (
     <div className="relative h-full w-full">
       <ZoomControls
         onZoomIn={() => cam.zoomAt(1.5)}
         onZoomOut={() => cam.zoomAt(1 / 1.5)}
-        onLocate={() => pinPoint && cam.centerOn(pinPoint.x, pinPoint.y)}
+        onLocate={() => cam.centerOn(currentPoint[0], currentPoint[1])}
         canZoomIn={cam.canZoomIn}
         canZoomOut={cam.canZoomOut}
       />
@@ -138,7 +132,7 @@ function TrackingMapInner({ shipment, route }: TrackingMapProps) {
         viewBox={`0 0 ${US_MAP_W} ${US_MAP_H}`}
         className="h-full w-full"
         role="img"
-        aria-label={`Map of shipment ${shipment.trackingNumber} from ${shipment.origin.city} to ${shipment.destination.city}`}
+        aria-label={`Map of shipment ${shipment.trackingNumber}, currently ${current?.event.status ?? shipment.status}`}
         {...cam.pointerHandlers}
         style={{
           cursor: cam.camera.scale > 1 ? "grab" : "default",
@@ -199,67 +193,65 @@ function TrackingMapInner({ shipment, route }: TrackingMapProps) {
             })}
           </g>
 
-          {/* Faint full route (road ahead) + animated completed portion */}
-          <path d={geometry.path} fill="none" stroke={ROUTE_BLUE} strokeWidth={2 * k} strokeLinecap="round" opacity={0.18} />
+          {/* TRAVELED ROUTE ONLY — no remaining route is drawn */}
           <path
-            ref={routeRef}
+            ref={pathRef}
             d={geometry.path}
             fill="none"
             stroke="url(#track-route-stroke)"
             strokeWidth={3.6 * k}
             strokeLinecap="round"
+            strokeLinejoin="round"
             filter={k > 1 ? undefined : "url(#track-route-glow)"}
           />
 
+          {/* Completed scan points along the traveled route */}
+          {geometry.points.slice(1, -1).map(([x, y], i) => (
+            <circle
+              key={i}
+              cx={x}
+              cy={y}
+              r={3 * k}
+              fill="#FFFFFF"
+              stroke={ROUTE_BLUE}
+              strokeWidth={1.8 * k}
+            />
+          ))}
+
           {/* Origin */}
-          <g transform={`translate(${ox} ${oy}) scale(${k})`}>
+          <g transform={`translate(${originPoint[0]} ${originPoint[1]}) scale(${k})`}>
             <OriginMarker x={0} y={0} />
           </g>
           <StatusCard
-            x={ox}
-            y={oy}
+            x={originPoint[0]}
+            y={originPoint[1]}
             label="From"
             value={formatPlace(shipment.origin.city, shipment.origin.state) || shipment.origin.city}
             accent="blue"
             k={k}
           />
 
-          {/* Destination */}
-          {delivered ? (
-            <>
-              <g transform={`translate(${dx} ${dy}) scale(${k})`}>
-                <DeliveredMarker x={0} y={0} />
-              </g>
-              {settled && (
-                <StatusCard
-                  x={dx}
-                  y={dy}
-                  label="Delivered"
-                  value={
-                    formatPlace(shipment.destination.city, shipment.destination.state) ||
-                    shipment.destination.city
-                  }
-                  accent="green"
-                  fadeIn
-                  k={k}
-                />
-              )}
-            </>
-          ) : (
-            <g transform={`translate(${dx} ${dy}) scale(${k})`}>
-              <DestinationMarker x={0} y={0} />
+          {/* Current position — the end of the traveled route */}
+          {journey.delivered ? (
+            <g transform={`translate(${currentPoint[0]} ${currentPoint[1]}) scale(${k})`}>
+              <DeliveredMarker x={0} y={0} />
             </g>
+          ) : (
+            <CurrentPin ref={pinRef} />
           )}
 
-          {/* Traveling pin + in-transit card once it has settled */}
-          {!delivered && <CurrentPin ref={pinRef} />}
-          {!delivered && settled && pinPoint && (
+          {/* Popup reads the SAME currentStep the timeline highlights */}
+          {settled && current && (
             <StatusCard
-              x={pinPoint.x}
-              y={pinPoint.y - 34 * k}
-              label={shipment.status}
-              value={shipment.currentLocation.city || `${Math.round(shipment.progress)}% of route complete`}
-              accent="blue"
+              x={currentPoint[0]}
+              y={currentPoint[1] - (journey.delivered ? 0 : 34 * k)}
+              label={journey.delivered ? "Delivered" : current.event.status}
+              value={
+                formatPlace(current.event.city, current.event.state) ||
+                shipment.currentLocation.city ||
+                shipment.destination.city
+              }
+              accent={journey.delivered ? "green" : "blue"}
               fadeIn
               k={k}
             />
@@ -268,6 +260,14 @@ function TrackingMapInner({ shipment, route }: TrackingMapProps) {
       </svg>
     </div>
   );
+}
+
+function polyline(points: [number, number][]): string {
+  if (points.length === 1) {
+    const [x, y] = points[0];
+    return `M ${x} ${y} L ${x + 0.01} ${y}`;
+  }
+  return `M ${points.map(([x, y]) => `${x} ${y}`).join(" L ")}`;
 }
 
 export const TrackingMap = memo(TrackingMapInner);

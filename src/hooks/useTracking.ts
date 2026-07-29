@@ -21,7 +21,7 @@ export function useTracking() {
       setState({
         status: "error",
         number,
-        message: "Please enter a valid tracking number (e.g. LIN123456789).",
+        message: "Please enter a valid tracking number.",
       });
       return;
     }

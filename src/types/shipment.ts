@@ -42,6 +42,9 @@ export interface TimelineEvent {
   /** Display time, e.g. "14:32" */
   time: string;
   sortOrder: number;
+  /** Scan coordinates. When present the map plots this exact point. */
+  lat?: number;
+  lng?: number;
 }
 
 export interface PackageDimensions {
@@ -69,6 +72,10 @@ export interface Shipment {
   timeline: TimelineEvent[];
 
   // ── Detail-panel fields (reference design) — all optional ──
+  lastUpdated?: string;
+  shipmentTypeLabel?: string;
+  serviceLevel?: string;
+  currentFacility?: string;
   senderName?: string;
   receiverName?: string;
   shippingMethod?: string;

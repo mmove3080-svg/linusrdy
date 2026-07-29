@@ -7,8 +7,12 @@ import { ServicesSection } from "@/components/home/services/ServicesSection";
 import { ReviewsSection } from "@/components/home/reviews/ReviewsSection";
 import { TrackingDashboard } from "@/components/tracking/TrackingDashboard";
 import { LoadingSkeleton } from "@/components/tracking/LoadingSkeleton";
+import { TrackingError } from "@/components/tracking/TrackingError";
+import { requestTrackingFocus } from "@/components/tracking/trackingFocus";
+import { useSmoothScroll } from "@/hooks/useSmoothScroll";
 import { SciFiBackdrop } from "@/components/ui/SciFiBackdrop";
 import { useTracking } from "@/hooks/useTracking";
+import { SECTION_IDS } from "@/lib/constants";
 
 /**
  * Application shell.
@@ -17,7 +21,8 @@ import { useTracking } from "@/hooks/useTracking";
  * start the lookup automatically on load.
  */
 export default function App() {
-  const { state, track } = useTracking();
+  const { state, track, reset } = useTracking();
+  const scrollTo = useSmoothScroll();
   const resultsRef = useRef<HTMLDivElement>(null);
 
   // Shared tracking links: ?track=LIN123456789
@@ -28,7 +33,7 @@ export default function App() {
 
   // Bring the results into view when a lookup succeeds.
   useEffect(() => {
-    if (state.status === "success") {
+    if (state.status === "success" || state.status === "error") {
       window.setTimeout(() => {
         resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 120);
@@ -50,6 +55,26 @@ export default function App() {
             <SciFiBackdrop intensity="soft" />
             <div className="shell relative">
               <LoadingSkeleton />
+            </div>
+          </section>
+        )}
+
+        {state.status === "error" && (
+          <section
+            ref={resultsRef}
+            aria-label="Tracking result"
+            className="relative scroll-mt-24 overflow-hidden pb-10"
+          >
+            <SciFiBackdrop intensity="soft" />
+            <div className="shell relative">
+              <TrackingError
+                message={state.message}
+                trackingNumber={state.number}
+                onTrackAnother={() => {
+                  reset();
+                  scrollTo(SECTION_IDS.track, requestTrackingFocus);
+                }}
+              />
             </div>
           </section>
         )}

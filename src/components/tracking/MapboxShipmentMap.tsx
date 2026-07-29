@@ -2,10 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import type { Shipment, RouteData, RouteGeometry } from "@/types/shipment";
 import { MapboxMapService } from "@/services/map/MapboxMapService";
 import { TrackingMap } from "./TrackingMap";
+import type { ShipmentJourney } from "@/hooks/useShipmentJourney";
 
 interface MapboxShipmentMapProps {
   shipment: Shipment;
   route: RouteData | null;
+  /** Shared source of truth, forwarded to the SVG fallback. */
+  journey: ShipmentJourney;
 }
 
 /**
@@ -15,7 +18,7 @@ interface MapboxShipmentMapProps {
  * If Mapbox fails at runtime (bad/missing token, network), it silently falls
  * back to the branded SVG tracking map so the customer always sees a map.
  */
-export function MapboxShipmentMap({ shipment, route }: MapboxShipmentMapProps) {
+export function MapboxShipmentMap({ shipment, route, journey }: MapboxShipmentMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [failed, setFailed] = useState(false);
 
@@ -33,7 +36,8 @@ export function MapboxShipmentMap({ shipment, route }: MapboxShipmentMapProps) {
         route: route ?? fallbackRoute(shipment),
         origin: shipment.origin,
         destination: shipment.destination,
-        progress: shipment.progress,
+        // Driven by the shared journey — never a second progress source.
+        progress: journey.progressPercent,
       })
       .catch((err) => {
         console.warn("Mapbox unavailable, falling back to SVG map:", err);
@@ -44,9 +48,9 @@ export function MapboxShipmentMap({ shipment, route }: MapboxShipmentMapProps) {
       cancelled = true;
       service.destroy();
     };
-  }, [shipment, route, failed]);
+  }, [shipment, route, journey, failed]);
 
-  if (failed) return <TrackingMap shipment={shipment} route={route} />;
+  if (failed) return <TrackingMap shipment={shipment} route={route} journey={journey} />;
 
   return (
     <div

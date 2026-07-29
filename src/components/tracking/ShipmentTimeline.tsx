@@ -1,124 +1,111 @@
-import { useMemo, useState } from "react";
-import { Check, ChevronDown } from "lucide-react";
-import type { Shipment, TimelineEvent } from "@/types/shipment";
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { ChevronDown } from "lucide-react";
 import { formatDate, formatPlace } from "@/utils/format";
+import { iconForStatus } from "./stages";
+import type { ShipmentJourney } from "@/hooks/useShipmentJourney";
 
-const COLLAPSED_COUNT = 4;
-
-type EventState = "completed" | "current" | "future";
+const COLLAPSED_COUNT = 5;
 
 /**
- * Vertical shipment timeline.
- * Completed events: green checks. Current event: highlighted blue with pulse.
- * Future events: gray. Collapses to the most recent events with a
- * "View Full History" toggle.
+ * Vertical shipment journey.
+ * Pure rendering — every step and its state comes from the shared journey
+ * object, so the highlighted step is always the one the map marker sits on.
  */
-export function ShipmentTimeline({ shipment }: { shipment: Shipment }) {
+export function ShipmentTimeline({ journey }: { journey: ShipmentJourney }) {
   const [expanded, setExpanded] = useState(false);
 
-  // Newest first for display; event state derived from the shipment status.
-  const annotated = useMemo(() => {
-    const asc = [...shipment.timeline].sort((a, b) => a.sortOrder - b.sortOrder);
-    const currentIdx = shipment.status === "Delivered"
-      ? -1 // everything completed
-      : (() => {
-          for (let i = asc.length - 1; i >= 0; i--) {
-            if (asc[i].status === shipment.status) return i;
-          }
-          return asc.length - 1;
-        })();
-    return asc
-      .map((event, i): { event: TimelineEvent; state: EventState } => ({
-        event,
-        state:
-          shipment.status === "Delivered" || i < currentIdx
-            ? "completed"
-            : i === currentIdx
-              ? "current"
-              : "future",
-      }))
-      .reverse();
-  }, [shipment]);
-
-  const visible = expanded ? annotated : annotated.slice(0, COLLAPSED_COUNT);
-  const hiddenCount = annotated.length - COLLAPSED_COUNT;
+  const visible = expanded ? journey.steps : journey.steps.slice(0, COLLAPSED_COUNT);
+  const hidden = journey.steps.length - COLLAPSED_COUNT;
 
   return (
-    <div>
-      <h3 className="text-[15px] font-extrabold text-ink">Tracking Journey</h3>
+    <motion.section
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.1, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+      aria-label="Shipment progress"
+      className="card rounded-2xl p-4 sm:p-5"
+    >
+      <h3 className="text-sm font-extrabold text-ink">Shipment Progress</h3>
 
       <ol className="mt-4">
-        {visible.map(({ event, state }, i) => (
-          <li
-            key={event.id}
-            className={`relative flex gap-3 pb-5 last:pb-0 ${
-              state === "current"
-                ? "-mx-2.5 rounded-xl bg-violet-50/80 px-2.5 pt-2.5 ring-1 ring-violet-100"
-                : ""
-            }`}
-          >
-            {/* Connector line */}
-            {i < visible.length - 1 && (
-              <span
-                aria-hidden="true"
-                className={`absolute left-[11px] top-7 h-[calc(100%-14px)] w-0.5 rounded-full ${
-                  state === "future" ? "bg-canvas-line" : "bg-emerald-200"
-                }`}
-              />
-            )}
+        {visible.map(({ event, state }, i) => {
+          const Icon = iconForStatus(event.status);
+          const isLast = i === visible.length - 1;
+          const place = formatPlace(event.city, event.state, event.country);
 
-            {/* Node */}
-            <span className="relative z-10 mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center">
-              {state === "completed" && (
-                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-white">
-                  <Check className="h-3 w-3" strokeWidth={3} />
+          return (
+            <li key={event.id} className="relative flex gap-3 pb-4 last:pb-0">
+              {!isLast && (
+                <span
+                  aria-hidden="true"
+                  className={`absolute left-[15px] top-9 h-[calc(100%-24px)] w-0.5 rounded-full ${
+                    state === "pending" ? "bg-canvas-line" : "bg-brand-200"
+                  }`}
+                />
+              )}
+
+              <span className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center">
+                {state === "current" && (
+                  <span className="absolute inset-0 animate-pin-pulse rounded-full bg-brand-500/30" />
+                )}
+                <span
+                  className={`relative flex h-8 w-8 items-center justify-center rounded-full border-2 ${
+                    state === "completed"
+                      ? "border-brand-600 bg-brand-600 text-white"
+                      : state === "current"
+                        ? "border-brand-600 bg-white text-brand-600"
+                        : "border-canvas-line bg-white text-ink-faint"
+                  }`}
+                >
+                  <Icon className="h-4 w-4" strokeWidth={2.1} aria-hidden="true" />
                 </span>
-              )}
-              {state === "current" && (
-                <>
-                  <span className="absolute h-6 w-6 animate-pin-pulse rounded-full bg-violet-600/30" />
-                  <span className="relative h-3.5 w-3.5 rounded-full border-[3px] border-violet-600 bg-violet-600" />
-                </>
-              )}
-              {state === "future" && (
-                <span className="h-3 w-3 rounded-full border-2 border-canvas-line bg-white" />
-              )}
-            </span>
+              </span>
 
-            {/* Content */}
-            <div className={`min-w-0 ${state === "future" ? "opacity-55" : ""}`}>
-              <p
-                className={`text-[13px] font-bold leading-snug ${
-                  state === "current" ? "text-violet-700" : "text-ink"
-                }`}
+              <div
+                className={`min-w-0 flex-1 rounded-xl px-3 py-2 transition-colors ${
+                  state === "current" ? "bg-brand-50/70 ring-1 ring-brand-100" : ""
+                } ${state === "pending" ? "opacity-55" : ""}`}
               >
-                {event.status}
-              </p>
-              <p className="mt-0.5 truncate text-xs text-ink-soft">
-                {formatPlace(event.city, event.state, event.country)}
-              </p>
-              <p className="mt-0.5 text-[11px] font-medium text-ink-faint">
-                {formatDate(event.date)}
-                {event.time ? ` · ${event.time}` : ""}
-              </p>
-            </div>
-          </li>
-        ))}
+                <p
+                  className={`text-[13px] font-bold leading-snug ${
+                    state === "current" ? "text-brand-700" : "text-ink"
+                  }`}
+                >
+                  {event.status}
+                </p>
+                {place && <p className="mt-0.5 truncate text-[11.5px] text-ink-soft">{place}</p>}
+                {(event.date || event.time) && (
+                  <p className="mt-0.5 text-[11px] font-medium text-ink-faint">
+                    {event.date ? formatDate(event.date) : ""}
+                    {event.date && event.time ? " · " : ""}
+                    {event.time}
+                  </p>
+                )}
+                {state === "current" && (
+                  <p className="mt-1 text-[11px] font-semibold text-brand-600">
+                    Your shipment is here now
+                  </p>
+                )}
+              </div>
+            </li>
+          );
+        })}
       </ol>
 
-      {hiddenCount > 0 && (
+      {hidden > 0 && (
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-violet-100 bg-white px-3.5 py-2 text-xs font-bold text-violet-600 shadow-soft transition-all duration-200 hover:border-violet-200 hover:bg-violet-50"
+          className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-canvas-line bg-white px-3.5 py-2 text-xs font-bold text-brand-600 shadow-soft transition-all duration-200 hover:border-brand-200 hover:bg-brand-50"
         >
-          {expanded ? "Show Less" : `View Full History (${hiddenCount} more)`}
+          {expanded ? "Show Less" : `View Full History (${hidden} more)`}
           <ChevronDown
             className={`h-3.5 w-3.5 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
             strokeWidth={2.5}
           />
         </button>
       )}
-    </div>
+    </motion.section>
   );
 }
