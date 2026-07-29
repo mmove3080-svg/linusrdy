@@ -95,11 +95,12 @@ export function ShipmentTimeline({ journey }: { journey: ShipmentJourney }) {
         })}
       </ol>
 
-      {hidden > 0 && (
+      {(hidden > 0 || journey.steps.length > 0) && (
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="mt-6 inline-flex items-center gap-1.5 rounded-xl border border-violet-100 bg-white px-4 py-2.5 text-xs font-bold text-violet-700 shadow-soft transition-all duration-200 hover:border-violet-200 hover:bg-violet-50"
+          disabled={hidden <= 0}
+          className="mt-6 inline-flex items-center gap-1.5 rounded-xl border border-violet-100 bg-white px-4 py-2.5 text-xs font-bold text-violet-700 shadow-soft transition-all duration-200 enabled:hover:border-violet-200 enabled:hover:bg-violet-50 disabled:cursor-default disabled:opacity-70"
         >
           {expanded ? "Show Less" : "View Full History"}
           <ChevronRight

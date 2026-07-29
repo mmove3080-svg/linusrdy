@@ -8,11 +8,11 @@ import { ZoomControls } from "@/components/home/map/ZoomControls";
 import { useMapCamera } from "@/components/home/map/useMapCamera";
 import { useMapScale } from "@/components/home/map/useMapScale";
 import { projectLatLng } from "@/utils/projection";
-import { formatPlace } from "@/utils/format";
+import { formatDate, formatPlace } from "@/utils/format";
 import type { Shipment, RouteData } from "@/types/shipment";
 import type { ShipmentJourney } from "@/hooks/useShipmentJourney";
 
-const ROUTE_BLUE = "#2E9BFF";
+const ROUTE_VIOLET = "#7C3AED";
 
 interface TrackingMapProps {
   shipment: Shipment;
@@ -148,8 +148,8 @@ function TrackingMapInner({ shipment, route, journey }: TrackingMapProps) {
             </feMerge>
           </filter>
           <linearGradient id="track-route-stroke" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor={ROUTE_BLUE} stopOpacity="0.45" />
-            <stop offset="100%" stopColor={ROUTE_BLUE} stopOpacity="1" />
+            <stop offset="0%" stopColor={ROUTE_VIOLET} stopOpacity="0.45" />
+            <stop offset="100%" stopColor={ROUTE_VIOLET} stopOpacity="1" />
           </linearGradient>
         </defs>
 
@@ -213,7 +213,7 @@ function TrackingMapInner({ shipment, route, journey }: TrackingMapProps) {
               cy={y}
               r={3 * k}
               fill="#FFFFFF"
-              stroke={ROUTE_BLUE}
+              stroke={ROUTE_VIOLET}
               strokeWidth={1.8 * k}
             />
           ))}
@@ -247,11 +247,16 @@ function TrackingMapInner({ shipment, route, journey }: TrackingMapProps) {
               y={currentPoint[1] - (journey.delivered ? 0 : 34 * k)}
               label={journey.delivered ? "Delivered" : current.event.status}
               value={
-                formatPlace(current.event.city, current.event.state) ||
+                formatPlace(current.event.city, current.event.state, current.event.country) ||
                 shipment.currentLocation.city ||
                 shipment.destination.city
               }
-              accent={journey.delivered ? "green" : "blue"}
+              detail={
+                current.event.date
+                  ? `${formatDate(current.event.date)}${current.event.time ? ` • ${current.event.time}` : ""}`
+                  : undefined
+              }
+              accent={journey.delivered ? "green" : "violet"}
               fadeIn
               k={k}
             />

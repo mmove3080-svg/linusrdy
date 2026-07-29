@@ -33,6 +33,7 @@ const STATUS_PILL: Partial<Record<ShipmentStatus, string>> & { default: string }
  */
 export function TrackingDashboard({ data }: { data: TrackingResponse }) {
   const { shipment, route } = data;
+  const [tab, setTab] = useState<"map" | "details">("map");
   const [copiedShare, setCopiedShare] = useState(false);
   const [copiedNumber, setCopiedNumber] = useState(false);
 
@@ -168,9 +169,39 @@ export function TrackingDashboard({ data }: { data: TrackingResponse }) {
 
         {/* Right: map card (unchanged) + details and forecast */}
         <div className="order-1 space-y-4 p-4 sm:p-6 lg:order-2">
+          {/* Tabs */}
+          <div role="tablist" aria-label="Shipment view" className="flex gap-7 border-b border-canvas-line">
+            {(
+              [
+                { id: "map", label: "Live Map" },
+                { id: "details", label: "Shipment Details" },
+              ] as const
+            ).map(({ id, label }) => (
+              <button
+                key={id}
+                role="tab"
+                aria-selected={tab === id}
+                onClick={() => setTab(id)}
+                className={`relative pb-2.5 text-[13.5px] font-bold transition-colors ${
+                  tab === id ? "text-violet-700" : "text-ink-soft hover:text-ink"
+                }`}
+              >
+                {label}
+                {tab === id && (
+                  <motion.span
+                    layoutId="tracking-tab-underline"
+                    className="absolute inset-x-0 -bottom-px h-[2px] rounded-full bg-violet-600"
+                    transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                  />
+                )}
+              </button>
+            ))}
+          </div>
+
+          {/* Map panel — kept mounted so the map never re-initialises on tab switch */}
           <section
             aria-label="Live shipment map"
-            className="card overflow-hidden rounded-2xl"
+            className={`card overflow-hidden rounded-2xl ${tab === "map" ? "block" : "hidden"}`}
           >
             <div className="flex items-center gap-2.5 border-b border-canvas-line px-4 py-3">
               <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
@@ -198,6 +229,14 @@ export function TrackingDashboard({ data }: { data: TrackingResponse }) {
             </div>
           </section>
 
+          {/* Full details panel */}
+          {tab === "details" && (
+            <section aria-label="Shipment details" className="card rounded-2xl p-4 sm:p-5">
+              <ShipmentDetails shipment={shipment} variant="full" />
+            </section>
+          )}
+
+          {/* Bottom cards — details beside the delivery forecast, as in the reference */}
           <div className="grid gap-4 xl:grid-cols-[1fr_minmax(280px,42%)]">
             <div className="card rounded-2xl px-4 py-2 sm:px-5">
               <ShipmentDetails shipment={shipment} variant="compact" />

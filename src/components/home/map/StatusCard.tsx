@@ -6,7 +6,9 @@ interface StatusCardProps {
   y: number;
   label: string;
   value: string;
-  accent: "blue" | "green";
+  /** Optional third line — "Jun 26, 2026 • 11:07 AM" in the reference. */
+  detail?: string;
+  accent: "blue" | "green" | "violet";
   fadeIn?: boolean;
   /** scale factor — >1 on small screens so cards stay readable when the SVG shrinks */
   k?: number;
@@ -15,6 +17,7 @@ interface StatusCardProps {
 const ACCENTS = {
   blue: "#2E7CF6",
   green: "#16A34A",
+  violet: "#7C3AED",
 } as const;
 
 /**
@@ -22,9 +25,19 @@ const ACCENTS = {
  * white rounded rectangle, soft shadow, small pointer beneath,
  * tiny uppercase accent label above a bold dark value.
  */
-export function StatusCard({ x, y, label, value, accent, fadeIn = false, k = 1 }: StatusCardProps) {
-  const width = (Math.max(label.length * 6.4, value.length * 7.6) + 30) * k;
-  const height = 46 * k;
+export function StatusCard({
+  x,
+  y,
+  label,
+  value,
+  detail,
+  accent,
+  fadeIn = false,
+  k = 1,
+}: StatusCardProps) {
+  const width =
+    (Math.max(label.length * 6.4, value.length * 7.6, (detail?.length ?? 0) * 6.2) + 30) * k;
+  const height = (detail ? 64 : 46) * k;
   // Clamp horizontally so the card never leaves the map.
   const cx = Math.min(Math.max(x, width / 2 + 10), US_MAP_W - width / 2 - 10);
   // Prefer above the anchor; flip below if too close to the top edge.
@@ -64,6 +77,18 @@ export function StatusCard({ x, y, label, value, accent, fadeIn = false, k = 1 }
       >
         {value}
       </text>
+      {detail && (
+        <text
+          x={cx - width / 2 + 15 * k}
+          y={top + 52 * k}
+          fontSize={10.5 * k}
+          fontWeight={500}
+          fill="#6B7280"
+          style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+        >
+          {detail}
+        </text>
+      )}
     </g>
   );
 }

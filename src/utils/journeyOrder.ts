@@ -6,12 +6,13 @@ import type { TimelineEvent } from "@/types/shipment";
  * are unavailable or incomplete.
  */
 export const JOURNEY_SEQUENCE: RegExp[] = [
-  /accept|order|created|booked/i,          // 1. Shipment Accepted
-  /depart|left|dispatched from/i,          // 2. Departed Facility
-  /arriv|sort facility|warehouse|hub|processing/i, // 3. Arrived at Sort Facility
-  /in transit|en route|transit/i,          // 4. In Transit
-  /out for delivery|last mile|with courier/i, // 5. Out for Delivery
-  /delivered|completed/i,                  // 6. Delivered
+  // 1. Shipment Accepted / Picked Up — the first scan, whatever it's called
+  /accept|order(ed)?\b|created|booked|pick(ed)?[\s-]*up|pickup|collected|received/i,
+  /depart|left|dispatched from/i,                   // 2. Departed Facility
+  /arriv|sort facility|warehouse|hub|processing/i,  // 3. Arrived at Sort Facility
+  /in transit|en route|transit/i,                   // 4. In Transit
+  /out for delivery|last mile|with courier/i,       // 5. Out for Delivery
+  /delivered|completed/i,                           // 6. Delivered
 ];
 
 /** Position in the canonical sequence, or -1 when unrecognised. */
@@ -57,14 +58,24 @@ export function parseEventTimestamp(date: string, time: string): number | undefi
 export function sortJourneyEvents(events: TimelineEvent[]): TimelineEvent[] {
   const everyHasSortOrder = events.length > 0 && events.every((e) => typeof e.sortOrder === "number");
 
+  // Derive any missing timestamps here so ordering never depends on whether the
+  // API happened to parse them.
+  const withTime = events.map((e) => ({
+    event: e,
+    time: typeof e.timestamp === "number" ? e.timestamp : parseEventTimestamp(e.date, e.time),
+  }));
+  const timeOf = new Map(withTime.map(({ event, time }) => [event, time]));
+
   return [...events].sort((a, b) => {
     if (everyHasSortOrder) {
       const diff = (a.sortOrder as number) - (b.sortOrder as number);
       if (diff !== 0) return diff;
     }
 
-    if (typeof a.timestamp === "number" && typeof b.timestamp === "number") {
-      const diff = a.timestamp - b.timestamp;
+    const ta = timeOf.get(a);
+    const tb = timeOf.get(b);
+    if (typeof ta === "number" && typeof tb === "number") {
+      const diff = ta - tb;
       if (diff !== 0) return diff;
     }
 
