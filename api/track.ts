@@ -157,13 +157,17 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
             country: str(r.fields["Country"]),
             date: str(r.fields["Date"]),
             time: str(r.fields["Time"]),
-            sortOrder: num(r.fields["Sort Order"]) || i,
+            // Only set when the field genuinely has a value. Falling back to
+            // the array index (Airtable's arbitrary record order) is exactly
+            // what made journeys render out of sequence.
+            sortOrder: hasNum(r.fields["Sort Order"]) ? num(r.fields["Sort Order"]) : undefined,
+            timestamp: parseTimestamp(str(r.fields["Date"]), str(r.fields["Time"])),
+            receivedIndex: i,
             // Optional per-scan coordinates. When supplied, the map plots the
             // journey exactly; when absent it interpolates along the route.
             lat: hasNum(r.fields["Latitude"]) ? num(r.fields["Latitude"]) : undefined,
             lng: hasNum(r.fields["Longitude"]) ? num(r.fields["Longitude"]) : undefined,
-          }))
-          .sort((a, b) => a.sortOrder - b.sortOrder),
+          })),
       },
       route,
     };
@@ -288,6 +292,22 @@ function attachmentUrl(v: unknown): string | undefined {
     return String((v[0] as { url: unknown }).url);
   }
   return undefined;
+}
+
+/** "2026-06-24" + "09:15 AM" -> epoch ms (undefined when unparseable). */
+function parseTimestamp(date: string, time: string): number | undefined {
+  if (!date) return undefined;
+  const base = new Date(date);
+  if (Number.isNaN(base.getTime())) return undefined;
+  const m = time?.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+  if (m) {
+    let h = Number(m[1]);
+    const mer = m[3]?.toUpperCase();
+    if (mer === "PM" && h < 12) h += 12;
+    if (mer === "AM" && h === 12) h = 0;
+    base.setHours(h, Number(m[2]), 0, 0);
+  }
+  return base.getTime();
 }
 
 function hasNum(v: unknown): boolean {

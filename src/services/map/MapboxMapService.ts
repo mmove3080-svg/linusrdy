@@ -7,7 +7,7 @@ import { cumulativeDistances, pointAtFraction, routeUpToFraction } from "@/utils
 const ROUTE_SOURCE = "shipment-route";
 const DONE_SOURCE = "shipment-route-done";
 const ROUTE_DONE = "#7C3AED"; // violet — completed portion
-const ROUTE_AHEAD = "#CBD5E1"; // gray — road ahead
+const ROUTE_AHEAD = "#E2E8F0"; // light gray — reads against satellite imagery
 
 /**
  * V1 map provider built on Mapbox GL JS.
@@ -36,7 +36,8 @@ export class MapboxMapService implements MapService {
 
     const map = new mapboxgl.Map({
       container: options.container,
-      style: "mapbox://styles/mapbox/light-v11",
+      // Google-Maps-style satellite imagery with road/label overlays.
+      style: "mapbox://styles/mapbox/satellite-streets-v12",
       bounds: this.routeBounds(),
       fitBoundsOptions: { padding: 72 },
       attributionControl: true,
@@ -79,6 +80,13 @@ export class MapboxMapService implements MapService {
     map.addSource(ROUTE_SOURCE, {
       type: "geojson",
       data: lineFeature(this.route),
+    });
+    map.addLayer({
+      id: `${ROUTE_SOURCE}-casing`,
+      type: "line",
+      source: ROUTE_SOURCE,
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: { "line-color": "#FFFFFF", "line-width": 8, "line-opacity": 0.55 },
     });
     map.addLayer({
       id: `${ROUTE_SOURCE}-line`,

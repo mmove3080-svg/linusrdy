@@ -1,52 +1,49 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Package, Truck, Warehouse, Check, Bell } from "lucide-react";
+import { Package, PlaneTakeoff, Truck, Check, Bell } from "lucide-react";
 import type { Shipment } from "@/types/shipment";
 import { calculateForecast } from "@/utils/forecast";
+import type { ShipmentJourney } from "@/hooks/useShipmentJourney";
 
 /**
- * Right column of the lower dashboard, reference style:
- * Delivery Forecast (large green %, animated bar), Transit Progress
- * (icon nodes along a violet track, "N of M completed"), and the
- * "Get real-time updates" alerts card.
+ * Delivery Forecast, Transit Progress and alerts card — the reference design.
+ * Every value derives from the shared journey object, so the transit nodes and
+ * "N of M completed" always agree with the timeline and the map marker.
  */
-export function DeliveryForecast({ shipment }: { shipment: Shipment }) {
+export function DeliveryForecast({
+  shipment,
+  journey,
+}: {
+  shipment: Shipment;
+  journey: ShipmentJourney;
+}) {
   const forecast = calculateForecast(shipment);
-  const fraction = Math.min(Math.max(shipment.progress, 0), 100) / 100;
+  const fraction = journey.progressPercent / 100;
+  const completed = journey.currentIndex + 1;
+  const total = journey.steps.length;
+  const [alertsRequested, setAlertsRequested] = useState(false);
 
-  const total = shipment.timeline.length;
-  const completed =
-    shipment.status === "Delivered"
-      ? total
-      : Math.max(
-          0,
-          (() => {
-            const asc = [...shipment.timeline].sort((a, b) => a.sortOrder - b.sortOrder);
-            for (let i = asc.length - 1; i >= 0; i--) {
-              if (asc[i].status === shipment.status) return i;
-            }
-            return Math.max(asc.length - 1, 0);
-          })(),
-        );
-
-  const stages = [
+  const nodes = [
     { icon: Package, at: 0 },
-    { icon: Warehouse, at: 0.34 },
+    { icon: PlaneTakeoff, at: 0.34 },
     { icon: Truck, at: 0.67 },
     { icon: Check, at: 1 },
   ];
 
-  const [alertsRequested, setAlertsRequested] = useState(false);
-
   return (
-    <div className="flex flex-col gap-4">
-      {/* ── Forecast card ── */}
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.12, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+      className="flex flex-col gap-4"
+    >
       <div className="card rounded-2xl p-5">
         <h3 className="text-sm font-extrabold text-ink">Delivery Forecast</h3>
 
         <div className="mt-2 flex items-center gap-4">
-          <span className="text-4xl font-extrabold tracking-tight text-green-600">
-            {forecast}%
+          <span className="text-[40px] font-extrabold leading-none tracking-tight text-green-600">
+            {forecast}
+            <span className="text-2xl">%</span>
           </span>
           <div>
             <p className="text-[13px] font-bold text-ink">On-time delivery</p>
@@ -54,40 +51,28 @@ export function DeliveryForecast({ shipment }: { shipment: Shipment }) {
           </div>
         </div>
 
-        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-canvas-line">
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${forecast}%` }}
-            transition={{ duration: 1.1, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
-            className="h-full rounded-full bg-green-500"
-          />
-        </div>
-
-        {/* ── Transit progress ── */}
-        <h3 className="mt-5 text-sm font-extrabold text-ink">Transit Progress</h3>
-        <div className="relative mt-3 h-8">
-          {/* track */}
-          <div className="absolute inset-x-1 top-1/2 h-1 -translate-y-1/2 rounded-full bg-canvas-line" />
+        <h3 className="mt-6 text-sm font-extrabold text-ink">Transit Progress</h3>
+        <div className="relative mt-4 h-8">
+          <div className="absolute inset-x-1 top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-canvas-line" />
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${fraction * 100}%` }}
-            transition={{ duration: 1.3, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
-            className="absolute left-1 top-1/2 h-1 -translate-y-1/2 rounded-full bg-violet-600"
+            transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: 0.25 }}
+            className="absolute left-1 top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-violet-600"
             style={{ maxWidth: "calc(100% - 8px)" }}
           />
-          {/* stage nodes */}
-          {stages.map(({ icon: Icon, at }, i) => {
+          {nodes.map(({ icon: Icon, at }, i) => {
             const done = fraction >= at - 0.001;
-            const isLast = i === stages.length - 1;
+            const isLast = i === nodes.length - 1;
             return (
               <span
                 key={i}
-                className={`absolute top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border-2 ${
+                className={`absolute top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border-2 bg-white ${
                   done
                     ? isLast
-                      ? "border-green-500 bg-green-500 text-white"
-                      : "border-violet-600 bg-white text-violet-600"
-                    : "border-canvas-line bg-white text-ink-faint"
+                      ? "border-emerald-400 text-emerald-500"
+                      : "border-violet-600 text-violet-600"
+                    : "border-canvas-line text-ink-faint"
                 }`}
                 style={{ left: `calc(${at * 100}% - ${at * 28}px)` }}
               >
@@ -96,24 +81,21 @@ export function DeliveryForecast({ shipment }: { shipment: Shipment }) {
             );
           })}
         </div>
-        {total > 0 && (
-          <p className="mt-2 text-xs text-ink-faint">
-            {completed} of {total} completed
-          </p>
-        )}
+        <p className="mt-2.5 text-xs text-ink-faint">
+          {completed} of {total} completed
+        </p>
       </div>
 
-      {/* ── Alerts card ── */}
       <div className="rounded-2xl bg-violet-50 p-4">
         <div className="flex flex-wrap items-center gap-3">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-violet-600 shadow-soft">
-            <Bell className="h-[1.125rem] w-[1.125rem]" strokeWidth={1.9} aria-hidden="true" />
+            <Bell className="h-[18px] w-[18px]" strokeWidth={1.9} aria-hidden="true" />
           </span>
           <div className="min-w-0 flex-1">
             <p className="text-[13px] font-extrabold text-ink">Get real-time updates</p>
-            <p className="text-xs text-ink-soft">
+            <p className="text-xs leading-relaxed text-ink-soft">
               {alertsRequested
-                ? "Notifications are coming soon — we've noted your interest."
+                ? "Noted — notifications are coming soon."
                 : "Turn on notifications and never miss an update."}
             </p>
           </div>
@@ -121,13 +103,13 @@ export function DeliveryForecast({ shipment }: { shipment: Shipment }) {
             <button
               type="button"
               onClick={() => setAlertsRequested(true)}
-              className="rounded-xl bg-violet-600 px-3.5 py-2 text-xs font-bold text-white shadow-soft transition-all duration-200 hover:bg-violet-700 active:scale-95"
+              className="rounded-xl bg-violet-600 px-4 py-2.5 text-xs font-bold text-white shadow-soft transition-all duration-200 hover:bg-violet-700 active:scale-95"
             >
               Enable Alerts
             </button>
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

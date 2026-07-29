@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import type { Shipment, TimelineEvent } from "@/types/shipment";
 import { CANONICAL_STAGES, stageIndex } from "@/components/tracking/stages";
+import { sortJourneyEvents } from "@/utils/journeyOrder";
 
 export interface JourneyStep {
   event: TimelineEvent;
@@ -44,7 +45,7 @@ export function useShipmentJourney(shipment: Shipment): ShipmentJourney {
     // ── Build the ordered step list ──
     const sorted: TimelineEvent[] =
       shipment.timeline.length > 0
-        ? [...shipment.timeline].sort((a, b) => a.sortOrder - b.sortOrder)
+        ? sortJourneyEvents(shipment.timeline)
         : CANONICAL_STAGES.map((stage, i) => ({
             id: `stage-${i}`,
             status: stage,
@@ -53,6 +54,7 @@ export function useShipmentJourney(shipment: Shipment): ShipmentJourney {
             date: "",
             time: "",
             sortOrder: i,
+            receivedIndex: i,
           }));
 
     // ── Resolve the current index ONCE ──

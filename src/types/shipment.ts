@@ -41,7 +41,13 @@ export interface TimelineEvent {
   date: string;
   /** Display time, e.g. "14:32" */
   time: string;
-  sortOrder: number;
+  /** Explicit ordering from Airtable. Undefined when the field is blank —
+   *  NEVER defaulted to an array index, which is not chronological. */
+  sortOrder?: number;
+  /** Epoch ms parsed from Date + Time, used for chronological ordering. */
+  timestamp?: number;
+  /** Preserves API arrival order purely as a final, stable tiebreak. */
+  receivedIndex: number;
   /** Scan coordinates. When present the map plots this exact point. */
   lat?: number;
   lng?: number;
