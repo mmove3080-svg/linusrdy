@@ -8,6 +8,7 @@ import { DeliveryForecast } from "./DeliveryForecast";
 import { TrackingMap } from "./TrackingMap";
 import { useShipmentJourney } from "@/hooks/useShipmentJourney";
 import { formatEtaRelative } from "@/utils/forecast";
+import logoMark from "@/assets/logo-mark.png";
 
 // Mapbox GL is heavy — load it only when a token is configured.
 const MapboxShipmentMap = lazy(() =>
@@ -84,7 +85,7 @@ export function TrackingDashboard({ data }: { data: TrackingResponse }) {
       className="card overflow-hidden rounded-panel"
     >
       {/* ══ Header ══ */}
-      <div className="flex flex-wrap items-center gap-x-8 gap-y-4 border-b border-canvas-line px-4 py-4 sm:px-7 sm:py-5">
+      <div className="flex flex-wrap items-center gap-x-7 gap-y-3 border-b border-canvas-line px-4 py-3.5 sm:px-6 sm:py-4">
         <div className="flex items-start gap-3">
           <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-50 text-violet-600">
             <Package className="h-[22px] w-[22px]" strokeWidth={1.8} aria-hidden="true" />
@@ -117,8 +118,13 @@ export function TrackingDashboard({ data }: { data: TrackingResponse }) {
         <span aria-hidden="true" className="hidden h-12 w-px bg-canvas-line md:block" />
 
         <div className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-ink text-[13px] font-extrabold text-white">
-            {initials(shipment.courier)}
+          <span className="flex h-10 w-10 items-center justify-center rounded-full border border-canvas-line bg-white p-1.5">
+            <img
+              src={logoMark}
+              alt=""
+              aria-hidden="true"
+              className="h-full w-full object-contain"
+            />
           </span>
           <div>
             <p className="text-[11px] font-semibold text-ink-faint">Courier</p>
@@ -163,12 +169,12 @@ export function TrackingDashboard({ data }: { data: TrackingResponse }) {
       {/* ══ Body ══ */}
       <div className="grid lg:grid-cols-[minmax(250px,32%)_1fr]">
         {/* Left: Tracking Journey */}
-        <div className="order-2 border-t border-canvas-line p-4 sm:p-6 lg:order-1 lg:border-r lg:border-t-0">
+        <div className="order-2 border-t border-canvas-line p-4 sm:p-5 lg:order-1 lg:border-r lg:border-t-0">
           <ShipmentTimeline journey={journey} />
         </div>
 
         {/* Right: map card (unchanged) + details and forecast */}
-        <div className="order-1 space-y-4 p-4 sm:p-6 lg:order-2">
+        <div className="order-1 space-y-3.5 p-4 sm:p-5 lg:order-2">
           {/* Tabs */}
           <div role="tablist" aria-label="Shipment view" className="flex gap-7 border-b border-canvas-line">
             {(
@@ -216,7 +222,7 @@ export function TrackingDashboard({ data }: { data: TrackingResponse }) {
                 {journey.progressPercent}% of route complete
               </span>
             </div>
-            <div className="h-[290px] p-2 sm:h-[340px] sm:p-3 lg:h-[380px]">
+            <div className="h-[270px] p-2 sm:h-[320px] sm:p-2.5 lg:h-[360px]">
               {HAS_MAPBOX ? (
                 <Suspense
                   fallback={<div className="h-full w-full animate-pulse rounded-xl bg-canvas-tint" />}
@@ -237,7 +243,7 @@ export function TrackingDashboard({ data }: { data: TrackingResponse }) {
           )}
 
           {/* Bottom cards — details beside the delivery forecast, as in the reference */}
-          <div className="grid gap-4 xl:grid-cols-[1fr_minmax(280px,42%)]">
+          <div className="grid gap-3.5 xl:grid-cols-[1fr_minmax(270px,40%)]">
             <div className="card rounded-2xl px-4 py-2 sm:px-5">
               <ShipmentDetails shipment={shipment} variant="compact" />
             </div>
@@ -249,11 +255,3 @@ export function TrackingDashboard({ data }: { data: TrackingResponse }) {
   );
 }
 
-function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-}

@@ -3,8 +3,9 @@ import { motion } from "framer-motion";
 import { Check, ChevronRight } from "lucide-react";
 import { formatDate, formatPlace } from "@/utils/format";
 import type { ShipmentJourney } from "@/hooks/useShipmentJourney";
+import { AlertsCard } from "./AlertsCard";
 
-const COLLAPSED_COUNT = 6;
+const COLLAPSED_COUNT = 4;
 
 /**
  * Tracking Journey — the reference design.
@@ -16,7 +17,8 @@ const COLLAPSED_COUNT = 6;
  * so this component renders the sequence exactly as resolved — it never sorts.
  */
 export function ShipmentTimeline({ journey }: { journey: ShipmentJourney }) {
-  const [expanded, setExpanded] = useState(false);
+  // Every stage is visible by default — future stages simply render faded.
+  const [expanded, setExpanded] = useState(true);
 
   const visible = expanded ? journey.steps : journey.steps.slice(0, COLLAPSED_COUNT);
   const hidden = journey.steps.length - COLLAPSED_COUNT;
@@ -31,7 +33,7 @@ export function ShipmentTimeline({ journey }: { journey: ShipmentJourney }) {
     >
       <h3 className="text-[15px] font-extrabold text-ink">Tracking Journey</h3>
 
-      <ol className="mt-5">
+      <ol className="mt-4">
         {visible.map(({ event, state }, i) => {
           const isLast = i === visible.length - 1;
           const place = formatPlace(event.city, event.state, event.country);
@@ -39,7 +41,7 @@ export function ShipmentTimeline({ journey }: { journey: ShipmentJourney }) {
           return (
             <li
               key={event.id}
-              className={`relative flex gap-3 pb-5 last:pb-0 ${
+              className={`relative flex gap-3 pb-4 last:pb-0 ${
                 state === "current" ? "-mx-3 rounded-xl bg-violet-50/80 px-3 pt-3" : ""
               }`}
             >
@@ -47,7 +49,7 @@ export function ShipmentTimeline({ journey }: { journey: ShipmentJourney }) {
                 <span
                   aria-hidden="true"
                   className={`absolute left-[11px] top-7 h-[calc(100%-14px)] w-[2px] rounded-full ${
-                    state === "pending" ? "bg-canvas-line" : "bg-emerald-300"
+                    state === "completed" ? "bg-emerald-300" : "bg-canvas-line"
                   }`}
                 />
               )}
@@ -100,15 +102,17 @@ export function ShipmentTimeline({ journey }: { journey: ShipmentJourney }) {
           type="button"
           onClick={() => setExpanded((v) => !v)}
           disabled={hidden <= 0}
-          className="mt-6 inline-flex items-center gap-1.5 rounded-xl border border-violet-100 bg-white px-4 py-2.5 text-xs font-bold text-violet-700 shadow-soft transition-all duration-200 enabled:hover:border-violet-200 enabled:hover:bg-violet-50 disabled:cursor-default disabled:opacity-70"
+          className="mt-4 inline-flex items-center gap-1.5 rounded-xl border border-violet-100 bg-white px-4 py-2.5 text-xs font-bold text-violet-700 shadow-soft transition-all duration-200 enabled:hover:border-violet-200 enabled:hover:bg-violet-50 disabled:cursor-default disabled:opacity-70"
         >
-          {expanded ? "Show Less" : "View Full History"}
+          {expanded ? "Show Less History" : "View Full History"}
           <ChevronRight
             className={`h-3.5 w-3.5 transition-transform duration-200 ${expanded ? "rotate-90" : ""}`}
             strokeWidth={2.5}
           />
         </button>
       )}
+
+      <AlertsCard />
     </motion.section>
   );
 }

@@ -134,7 +134,8 @@ export class MapboxMapService implements MapService {
     const from = this.currentFraction;
     const to = Math.min(Math.max(progress, 0), 100) / 100;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const duration = reduced ? 0 : Math.min(3200, 900 + Math.abs(to - from) * 2600);
+    // Slow, smooth travel so the drawn route visibly trails the truck.
+    const duration = reduced ? 0 : Math.min(4200, 1400 + Math.abs(to - from) * 3200);
     const start = performance.now();
     const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
 

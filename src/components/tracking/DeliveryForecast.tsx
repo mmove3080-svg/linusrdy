@@ -1,6 +1,5 @@
-import { useState } from "react";
 import { motion } from "framer-motion";
-import { Package, PlaneTakeoff, Truck, Check, Bell } from "lucide-react";
+import { Package, PlaneTakeoff, Truck, Check } from "lucide-react";
 import type { Shipment } from "@/types/shipment";
 import { calculateForecast } from "@/utils/forecast";
 import type { ShipmentJourney } from "@/hooks/useShipmentJourney";
@@ -21,7 +20,6 @@ export function DeliveryForecast({
   const fraction = journey.progressPercent / 100;
   const completed = journey.currentIndex + 1;
   const total = journey.steps.length;
-  const [alertsRequested, setAlertsRequested] = useState(false);
 
   const nodes = [
     { icon: Package, at: 0 },
@@ -37,7 +35,7 @@ export function DeliveryForecast({
       transition={{ delay: 0.12, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
       className="flex flex-col gap-4"
     >
-      <div className="card rounded-2xl p-5">
+      <div className="card rounded-2xl p-4 sm:p-5">
         <h3 className="text-sm font-extrabold text-ink">Delivery Forecast</h3>
 
         <div className="mt-2 flex items-center gap-4">
@@ -51,7 +49,7 @@ export function DeliveryForecast({
           </div>
         </div>
 
-        <h3 className="mt-6 text-sm font-extrabold text-ink">Transit Progress</h3>
+        <h3 className="mt-5 text-sm font-extrabold text-ink">Transit Progress</h3>
         <div className="relative mt-4 h-8">
           <div className="absolute inset-x-1 top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-canvas-line" />
           <motion.div
@@ -86,30 +84,6 @@ export function DeliveryForecast({
         </p>
       </div>
 
-      <div className="rounded-2xl bg-violet-50 p-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-violet-600 shadow-soft">
-            <Bell className="h-[18px] w-[18px]" strokeWidth={1.9} aria-hidden="true" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-[13px] font-extrabold text-ink">Get real-time updates</p>
-            <p className="text-xs leading-relaxed text-ink-soft">
-              {alertsRequested
-                ? "Noted — notifications are coming soon."
-                : "Turn on notifications and never miss an update."}
-            </p>
-          </div>
-          {!alertsRequested && (
-            <button
-              type="button"
-              onClick={() => setAlertsRequested(true)}
-              className="rounded-xl bg-violet-600 px-4 py-2.5 text-xs font-bold text-white shadow-soft transition-all duration-200 hover:bg-violet-700 active:scale-95"
-            >
-              Enable Alerts
-            </button>
-          )}
-        </div>
-      </div>
     </motion.div>
   );
 }

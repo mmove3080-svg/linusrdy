@@ -87,7 +87,8 @@ function TrackingMapInner({ shipment, route, journey }: TrackingMapProps) {
     pin.style.opacity = "0";
 
     let raf = 0;
-    const duration = reduced ? 1 : 1900;
+    // Slow, deliberate travel — the route draws progressively behind the truck.
+    const duration = reduced ? 1 : 3400;
     const start = performance.now();
 
     const step = (now: number) => {
