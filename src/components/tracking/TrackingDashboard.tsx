@@ -85,15 +85,15 @@ export function TrackingDashboard({ data }: { data: TrackingResponse }) {
       className="card overflow-hidden rounded-panel"
     >
       {/* ══ Header ══ */}
-      <div className="flex flex-wrap items-center gap-x-7 gap-y-3 border-b border-canvas-line px-4 py-3.5 sm:px-6 sm:py-4">
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2.5 border-b border-canvas-line px-3 py-3 sm:gap-x-7 sm:gap-y-3 sm:px-6 sm:py-4">
         <div className="flex items-start gap-3">
-          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-50 text-violet-600">
-            <Package className="h-[22px] w-[22px]" strokeWidth={1.8} aria-hidden="true" />
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 text-violet-600 sm:h-11 sm:w-11 sm:rounded-2xl">
+            <Package className="h-[18px] w-[18px] sm:h-[22px] sm:w-[22px]" strokeWidth={1.8} aria-hidden="true" />
           </span>
           <div>
-            <p className="text-[11px] font-semibold text-ink-faint">Tracking Number</p>
+            <p className="text-[10px] font-semibold text-ink-faint sm:text-[11px]">Tracking Number</p>
             <div className="flex items-center gap-1.5">
-              <p className="text-[15px] font-extrabold tracking-tight text-ink">
+              <p className="text-[12.5px] font-extrabold tracking-tight text-ink sm:text-[15px]">
                 {shipment.trackingNumber}
               </p>
               <button
@@ -118,7 +118,7 @@ export function TrackingDashboard({ data }: { data: TrackingResponse }) {
         <span aria-hidden="true" className="hidden h-12 w-px bg-canvas-line md:block" />
 
         <div className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-full border border-canvas-line bg-white p-1.5">
+          <span className="flex h-8 w-8 items-center justify-center rounded-full border border-canvas-line bg-white p-1 sm:h-10 sm:w-10 sm:p-1.5">
             <img
               src={logoMark}
               alt=""
@@ -127,8 +127,8 @@ export function TrackingDashboard({ data }: { data: TrackingResponse }) {
             />
           </span>
           <div>
-            <p className="text-[11px] font-semibold text-ink-faint">Courier</p>
-            <p className="text-[15px] font-extrabold text-ink">{shipment.courier}</p>
+            <p className="text-[10px] font-semibold text-ink-faint sm:text-[11px]">Courier</p>
+            <p className="text-[12.5px] font-extrabold leading-snug text-ink sm:text-[15px]">{shipment.courier}</p>
             {(shipment.serviceLevel ?? shipment.shippingMethod) && (
               <p className="text-xs text-ink-soft">
                 {shipment.serviceLevel ?? shipment.shippingMethod}
@@ -140,8 +140,8 @@ export function TrackingDashboard({ data }: { data: TrackingResponse }) {
         <span aria-hidden="true" className="hidden h-12 w-px bg-canvas-line md:block" />
 
         <div>
-          <p className="text-[11px] font-semibold text-ink-faint">Estimated Delivery</p>
-          <p className="text-[15px] font-extrabold text-green-600">
+          <p className="text-[10px] font-semibold text-ink-faint sm:text-[11px]">Estimated Delivery</p>
+          <p className="text-[12.5px] font-extrabold text-green-600 sm:text-[15px]">
             {shipment.estimatedDelivery ? formatEtaRelative(shipment.estimatedDelivery) : "—"}
           </p>
           {shipment.deliveryWindow && (
@@ -152,7 +152,7 @@ export function TrackingDashboard({ data }: { data: TrackingResponse }) {
         <button
           type="button"
           onClick={share}
-          className="ml-auto inline-flex items-center gap-2 rounded-xl bg-violet-50 px-4 py-2.5 text-[13px] font-bold text-violet-700 transition-all duration-200 hover:bg-violet-100 active:scale-95"
+          className="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-violet-50 px-3 py-2 text-[11.5px] font-bold text-violet-700 sm:gap-2 sm:rounded-xl sm:px-4 sm:py-2.5 sm:text-[13px] transition-all duration-200 hover:bg-violet-100 active:scale-95"
         >
           {copiedShare ? (
             <>
@@ -169,14 +169,14 @@ export function TrackingDashboard({ data }: { data: TrackingResponse }) {
       {/* ══ Body ══ */}
       <div className="grid lg:grid-cols-[minmax(250px,32%)_1fr]">
         {/* Left: Tracking Journey */}
-        <div className="order-2 border-t border-canvas-line p-4 sm:p-5 lg:order-1 lg:border-r lg:border-t-0">
+        <div className="order-2 border-t border-canvas-line p-3 sm:p-5 lg:order-1 lg:border-r lg:border-t-0">
           <ShipmentTimeline journey={journey} />
         </div>
 
         {/* Right: map card (unchanged) + details and forecast */}
-        <div className="order-1 space-y-3.5 p-4 sm:p-5 lg:order-2">
+        <div className="order-1 space-y-3 p-3 sm:space-y-3.5 sm:p-5 lg:order-2">
           {/* Tabs */}
-          <div role="tablist" aria-label="Shipment view" className="flex gap-7 border-b border-canvas-line">
+          <div role="tablist" aria-label="Shipment view" className="flex gap-5 border-b border-canvas-line sm:gap-7">
             {(
               [
                 { id: "map", label: "Live Map" },
@@ -188,7 +188,7 @@ export function TrackingDashboard({ data }: { data: TrackingResponse }) {
                 role="tab"
                 aria-selected={tab === id}
                 onClick={() => setTab(id)}
-                className={`relative pb-2.5 text-[13.5px] font-bold transition-colors ${
+                className={`relative pb-2.5 text-[12px] font-bold transition-colors sm:text-[13.5px] ${
                   tab === id ? "text-violet-700" : "text-ink-soft hover:text-ink"
                 }`}
               >

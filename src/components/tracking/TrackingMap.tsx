@@ -3,7 +3,7 @@ import { US_STATES, US_MAP_W, US_MAP_H } from "@/components/home/usMapGeo";
 import { STATE_ABBR, SMALL_LABEL_STATES } from "@/components/home/map/stateAbbr";
 import { easeInOut } from "@/components/home/map/journeyEngine";
 import { StatusCard } from "@/components/home/map/StatusCard";
-import { OriginMarker, CurrentPin, DeliveredMarker } from "@/components/home/map/MapMarkers";
+import { OriginMarker, TruckMarker, DeliveredMarker } from "@/components/home/map/MapMarkers";
 import { ZoomControls } from "@/components/home/map/ZoomControls";
 import { useMapCamera } from "@/components/home/map/useMapCamera";
 import { useMapScale } from "@/components/home/map/useMapScale";
@@ -238,7 +238,7 @@ function TrackingMapInner({ shipment, route, journey }: TrackingMapProps) {
               <DeliveredMarker x={0} y={0} />
             </g>
           ) : (
-            <CurrentPin ref={pinRef} />
+            <TruckMarker ref={pinRef} />
           )}
 
           {/* Popup reads the SAME currentStep the timeline highlights */}

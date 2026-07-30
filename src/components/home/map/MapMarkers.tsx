@@ -2,6 +2,7 @@ import { forwardRef } from "react";
 
 const BLUE = "#2E9BFF";
 const GREEN = "#22C55E";
+const VIOLET = "#7C3AED";
 
 /** Origin: solid blue dot in a white ring with a soft pulsing halo. */
 export function OriginMarker({ x, y }: { x: number; y: number }) {
@@ -18,9 +19,63 @@ export function OriginMarker({ x, y }: { x: number; y: number }) {
 }
 
 /**
- * Traveling shipment pin: large glowing teardrop with concentric pulse halos,
- * matching the reference's current-position marker. Positioned via transform
- * by the animation loop (ref-driven, no re-renders).
+ * Realistic delivery truck marker — represents the package's live position.
+ *
+ * Side-view box truck (cab, windscreen, cargo body, wheels with hubs, subtle
+ * ground shadow) seated on a soft pulsing halo so it stays visible against
+ * satellite imagery. Positioned via transform by the animation loop, so it
+ * moves without triggering React re-renders.
+ */
+export const TruckMarker = forwardRef<SVGGElement>(function TruckMarker(_, ref) {
+  return (
+    <g ref={ref} style={{ opacity: 0 }} aria-hidden="true">
+      {/* pulsing halo */}
+      <circle r={26} fill={VIOLET} opacity={0.1}>
+        <animate attributeName="r" values="20;32;20" dur="2.4s" repeatCount="indefinite" />
+      </circle>
+      <circle r={17} fill={VIOLET} opacity={0.16}>
+        <animate attributeName="r" values="15;21;15" dur="2.4s" repeatCount="indefinite" />
+      </circle>
+
+      <g transform="translate(-19 -12)" style={{ filter: "drop-shadow(0 3px 5px rgba(15,23,42,0.35))" }}>
+        {/* ground shadow */}
+        <ellipse cx={19} cy={23.5} rx={17} ry={2.2} fill="#0F172A" opacity={0.22} />
+
+        {/* cargo body */}
+        <rect x={0.5} y={3} width={22} height={15.5} rx={2} fill="#FFFFFF" stroke={VIOLET} strokeWidth={1.6} />
+        <rect x={3.5} y={6.5} width={16} height={4.6} rx={1} fill={VIOLET} opacity={0.16} />
+
+        {/* cab */}
+        <path
+          d="M22.5 8.2h6.4c.55 0 1.06.28 1.35.75l3.1 4.95c.16.26.25.56.25.86v3.74a1 1 0 0 1-1 1h-10.1V8.2Z"
+          fill="#FFFFFF"
+          stroke={VIOLET}
+          strokeWidth={1.6}
+          strokeLinejoin="round"
+        />
+        {/* windscreen */}
+        <path d="M23.9 9.7h4.6l2.5 4h-7.1V9.7Z" fill={VIOLET} opacity={0.28} />
+
+        {/* wheels */}
+        <circle cx={7.6} cy={19.4} r={3.5} fill="#1E293B" />
+        <circle cx={7.6} cy={19.4} r={1.4} fill="#FFFFFF" opacity={0.9} />
+        <circle cx={27.4} cy={19.4} r={3.5} fill="#1E293B" />
+        <circle cx={27.4} cy={19.4} r={1.4} fill="#FFFFFF" opacity={0.9} />
+
+        {/* motion lines */}
+        <g stroke={VIOLET} strokeWidth={1.4} strokeLinecap="round" opacity={0.55}>
+          <line x1={-6} y1={7.5} x2={-1.5} y2={7.5} />
+          <line x1={-4.5} y1={11.5} x2={-1.5} y2={11.5} />
+          <line x1={-6.5} y1={15.5} x2={-1.5} y2={15.5} />
+        </g>
+      </g>
+    </g>
+  );
+});
+
+/**
+ * Traveling shipment pin: large glowing teardrop with concentric pulse halos.
+ * Retained for the hero network map.
  */
 export const CurrentPin = forwardRef<SVGGElement>(function CurrentPin(_, ref) {
   return (

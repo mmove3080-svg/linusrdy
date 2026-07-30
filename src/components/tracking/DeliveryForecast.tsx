@@ -35,22 +35,22 @@ export function DeliveryForecast({
       transition={{ delay: 0.12, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
       className="flex flex-col gap-4"
     >
-      <div className="card rounded-2xl p-4 sm:p-5">
-        <h3 className="text-sm font-extrabold text-ink">Delivery Forecast</h3>
+      <div className="card rounded-2xl p-3.5 sm:p-5">
+        <h3 className="text-[13px] font-extrabold text-ink sm:text-sm">Delivery Forecast</h3>
 
-        <div className="mt-2 flex items-center gap-4">
-          <span className="text-[40px] font-extrabold leading-none tracking-tight text-green-600">
+        <div className="mt-2 flex items-center gap-3 sm:gap-4">
+          <span className="text-[30px] font-extrabold leading-none tracking-tight text-green-600 sm:text-[40px]">
             {forecast}
-            <span className="text-2xl">%</span>
+            <span className="text-lg sm:text-2xl">%</span>
           </span>
           <div>
-            <p className="text-[13px] font-bold text-ink">On-time delivery</p>
-            <p className="text-xs text-ink-faint">based on current progress</p>
+            <p className="text-[12px] font-bold text-ink sm:text-[13px]">On-time delivery</p>
+            <p className="text-[10.5px] text-ink-faint sm:text-xs">based on current progress</p>
           </div>
         </div>
 
-        <h3 className="mt-5 text-sm font-extrabold text-ink">Transit Progress</h3>
-        <div className="relative mt-4 h-8">
+        <h3 className="mt-4 text-[13px] font-extrabold text-ink sm:mt-5 sm:text-sm">Transit Progress</h3>
+        <div className="relative mt-3.5 h-7 sm:mt-4 sm:h-8">
           <div className="absolute inset-x-1 top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-canvas-line" />
           <motion.div
             initial={{ width: 0 }}
@@ -65,21 +65,21 @@ export function DeliveryForecast({
             return (
               <span
                 key={i}
-                className={`absolute top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border-2 bg-white ${
+                className={`absolute top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full border-2 bg-white sm:h-7 sm:w-7 ${
                   done
                     ? isLast
                       ? "border-emerald-400 text-emerald-500"
                       : "border-violet-600 text-violet-600"
                     : "border-canvas-line text-ink-faint"
                 }`}
-                style={{ left: `calc(${at * 100}% - ${at * 28}px)` }}
+                style={{ left: `calc(${at * 100}% - ${at * 26}px)` }}
               >
-                <Icon className="h-3.5 w-3.5" strokeWidth={2.2} aria-hidden="true" />
+                <Icon className="h-3 w-3 sm:h-3.5 sm:w-3.5" strokeWidth={2.2} aria-hidden="true" />
               </span>
             );
           })}
         </div>
-        <p className="mt-2.5 text-xs text-ink-faint">
+        <p className="mt-2 text-[10.5px] text-ink-faint sm:text-xs">
           {completed} of {total} completed
         </p>
       </div>

@@ -31,7 +31,7 @@ export function ShipmentTimeline({ journey }: { journey: ShipmentJourney }) {
       aria-label="Tracking journey"
       className="h-full"
     >
-      <h3 className="text-[15px] font-extrabold text-ink">Tracking Journey</h3>
+      <h3 className="text-[14px] font-extrabold text-ink sm:text-[15px]">Tracking Journey</h3>
 
       <ol className="mt-4">
         {visible.map(({ event, state }, i) => {
@@ -77,15 +77,15 @@ export function ShipmentTimeline({ journey }: { journey: ShipmentJourney }) {
 
               <div className={`min-w-0 flex-1 ${state === "pending" ? "opacity-60" : ""}`}>
                 <p
-                  className={`text-[13.5px] font-bold leading-snug ${
+                  className={`text-[12.5px] font-bold leading-snug sm:text-[13.5px] ${
                     state === "current" ? "text-violet-700" : "text-ink"
                   }`}
                 >
                   {event.status}
                 </p>
-                {place && <p className="mt-0.5 truncate text-[12px] text-ink-soft">{place}</p>}
+                {place && <p className="mt-0.5 truncate text-[11px] text-ink-soft sm:text-[12px]">{place}</p>}
                 {(event.date || event.time) && (
-                  <p className="mt-0.5 text-[11.5px] text-ink-faint">
+                  <p className="mt-0.5 text-[10.5px] text-ink-faint sm:text-[11.5px]">
                     {event.date ? formatDate(event.date) : ""}
                     {event.date && event.time ? " • " : ""}
                     {event.time}

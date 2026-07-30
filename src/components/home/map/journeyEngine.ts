@@ -1,5 +1,6 @@
 import { US_STATES, US_CITIES, type UsCity } from "../usMapGeo";
 import { NON_CONTINENTAL } from "./stateAbbr";
+import { buildDeliveryDatePool, formatDeliveryDate } from "@/utils/deliveryDates";
 
 /**
  * Journey generation engine — behavior preserved exactly from the previous
@@ -15,10 +16,17 @@ export interface Journey {
   dest: UsCity;
   path: string;
   travelMs: number;
+  /** "Jul 30, 2026" — present on the 15 future and 15 past journeys. */
+  deliveryDate?: string;
+  /** Future deliveries read "Arriving", past ones "Delivered". */
+  dateLabel?: "Arriving" | "Delivered";
 }
 
 export function buildJourneys(): Journey[] {
   const journeys: Journey[] = [];
+  // Rolling ±10-day date windows, Sundays excluded, regenerated on every loop
+  // so the cycle advances automatically with the calendar.
+  const datePool = buildDeliveryDatePool();
   const continental = US_STATES.filter((s) => !NON_CONTINENTAL.has(s.name));
   let originPool = shuffle([...continental]);
 
@@ -38,6 +46,8 @@ export function buildJourneys(): Journey[] {
       dest,
       path: curvedPath(from, dest, i),
       travelMs: 1400 + Math.min(2200, dist * 4.5),
+      deliveryDate: datePool[i] ? formatDeliveryDate(datePool[i] as Date) : undefined,
+      dateLabel: datePool[i] ? (i < 15 ? "Arriving" : "Delivered") : undefined,
     });
   }
   return journeys;

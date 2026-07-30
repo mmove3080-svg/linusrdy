@@ -63,13 +63,13 @@ export function ShipmentDetails({
         {rows.map(({ icon: Icon, label, value }) => (
           <li
             key={label}
-            className="flex items-center gap-3 border-b border-canvas-line/70 py-2.5 last:border-b-0"
+            className="flex items-center gap-2.5 border-b border-canvas-line/70 py-2 last:border-b-0 sm:gap-3 sm:py-2.5"
           >
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
-              <Icon className="h-4 w-4" strokeWidth={1.9} aria-hidden="true" />
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-violet-50 text-violet-600 sm:h-8 sm:w-8">
+              <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" strokeWidth={1.9} aria-hidden="true" />
             </span>
-            <span className="text-[13px] text-ink-soft">{label}</span>
-            <span className="ml-auto text-right text-[13px] font-bold text-ink">{value}</span>
+            <span className="text-[11.5px] text-ink-soft sm:text-[13px]">{label}</span>
+            <span className="ml-auto text-right text-[11.5px] font-bold text-ink sm:text-[13px]">{value}</span>
           </li>
         ))}
       </ul>

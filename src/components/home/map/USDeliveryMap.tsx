@@ -301,8 +301,9 @@ function USDeliveryMapInner() {
               <StatusCard
                 x={destX}
                 y={destY}
-                label="Delivered"
+                label={journey.dateLabel ?? "Delivered"}
                 value={`${journey.dest.city}, ${journey.dest.state}`}
+                detail={journey.deliveryDate}
                 accent="green"
                 fadeIn
                 k={k}
