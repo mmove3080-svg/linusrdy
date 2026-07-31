@@ -19,6 +19,10 @@ interface TrackingMapProps {
   route: RouteData | null;
   /** The single source of truth — supplied by the dashboard, never recomputed. */
   journey: ShipmentJourney;
+  /** Fires once the truck settles at the current location. */
+  onTruckArrived?: () => void;
+  /** Opens the CCTV overlay. */
+  onOpenCctv?: () => void;
 }
 
 /**
@@ -31,7 +35,7 @@ interface TrackingMapProps {
  *   - popup    = journey.currentStep
  * No remaining route is drawn, and nothing here recalculates progress.
  */
-function TrackingMapInner({ shipment, route, journey }: TrackingMapProps) {
+function TrackingMapInner({ shipment, route, journey, onTruckArrived, onOpenCctv }: TrackingMapProps) {
   const pathRef = useRef<SVGPathElement>(null);
   const pinRef = useRef<SVGGElement>(null);
   const [settled, setSettled] = useState(false);
@@ -88,7 +92,8 @@ function TrackingMapInner({ shipment, route, journey }: TrackingMapProps) {
 
     let raf = 0;
     // Slow, deliberate travel — the route draws progressively behind the truck.
-    const duration = reduced ? 1 : 3400;
+    // Slow, watchable journey — the route draws steadily behind the truck.
+    const duration = reduced ? 1 : 6500;
     const start = performance.now();
 
     const step = (now: number) => {
@@ -98,12 +103,16 @@ function TrackingMapInner({ shipment, route, journey }: TrackingMapProps) {
       const pt = pathEl.getPointAtLength(length * eased);
       pin.setAttribute("transform", `translate(${pt.x}, ${pt.y}) scale(${kRef.current})`);
       if (!journey.delivered) pin.style.opacity = "1";
-      if (t < 1) raf = requestAnimationFrame(step);
-      else setSettled(true);
+      if (t < 1) {
+        raf = requestAnimationFrame(step);
+      } else {
+        setSettled(true);
+        onTruckArrived?.();
+      }
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-  }, [geometry, journey.delivered, reduced, kRef]);
+  }, [geometry, journey.delivered, reduced, kRef, onTruckArrived]);
 
   if (!geometry) {
     return (
@@ -238,7 +247,14 @@ function TrackingMapInner({ shipment, route, journey }: TrackingMapProps) {
               <DeliveredMarker x={0} y={0} />
             </g>
           ) : (
-            <TruckMarker ref={pinRef} />
+            <g
+              onClick={onOpenCctv}
+              style={{ cursor: onOpenCctv ? "pointer" : "default" }}
+              role={onOpenCctv ? "button" : undefined}
+              aria-label={onOpenCctv ? "Watch live delivery truck CCTV footage" : undefined}
+            >
+              <TruckMarker ref={pinRef} />
+            </g>
           )}
 
           {/* Popup reads the SAME currentStep the timeline highlights */}

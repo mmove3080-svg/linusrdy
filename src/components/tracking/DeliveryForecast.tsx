@@ -35,22 +35,39 @@ export function DeliveryForecast({
       transition={{ delay: 0.12, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
       className="flex flex-col gap-4"
     >
-      <div className="card rounded-2xl p-3.5 sm:p-5">
-        <h3 className="text-[13px] font-extrabold text-ink sm:text-sm">Delivery Forecast</h3>
-
-        <div className="mt-2 flex items-center gap-3 sm:gap-4">
-          <span className="text-[30px] font-extrabold leading-none tracking-tight text-green-600 sm:text-[40px]">
+      <div className="card rounded-2xl p-4 sm:p-5">
+        {/* Mobile: the percentage leads, then the title — with generous spacing.
+            Desktop keeps the original title-first arrangement. */}
+        <div className="flex items-center gap-3.5 sm:hidden">
+          <span className="text-[32px] font-extrabold leading-none tracking-tight text-green-600">
             {forecast}
-            <span className="text-lg sm:text-2xl">%</span>
+            <span className="text-xl">%</span>
           </span>
-          <div>
-            <p className="text-[12px] font-bold text-ink sm:text-[13px]">On-time delivery</p>
-            <p className="text-[10.5px] text-ink-faint sm:text-xs">based on current progress</p>
+          <div className="min-w-0">
+            <p className="text-[13px] font-extrabold text-ink">Delivery Forecast</p>
+            <p className="mt-1 text-[11.5px] font-semibold text-ink-soft">On-time delivery</p>
+            <p className="mt-0.5 text-[11px] leading-relaxed text-ink-faint">
+              based on current progress
+            </p>
           </div>
         </div>
 
-        <h3 className="mt-4 text-[13px] font-extrabold text-ink sm:mt-5 sm:text-sm">Transit Progress</h3>
-        <div className="relative mt-3.5 h-7 sm:mt-4 sm:h-8">
+        <div className="hidden sm:block">
+          <h3 className="text-sm font-extrabold text-ink">Delivery Forecast</h3>
+          <div className="mt-2 flex items-center gap-4">
+            <span className="text-[40px] font-extrabold leading-none tracking-tight text-green-600">
+              {forecast}
+              <span className="text-2xl">%</span>
+            </span>
+            <div>
+              <p className="text-[13px] font-bold text-ink">On-time delivery</p>
+              <p className="text-xs text-ink-faint">based on current progress</p>
+            </div>
+          </div>
+        </div>
+
+        <h3 className="mt-6 text-[13px] font-extrabold text-ink sm:mt-5 sm:text-sm">Transit Progress</h3>
+        <div className="relative mt-5 h-7 sm:mt-4 sm:h-8">
           <div className="absolute inset-x-1 top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-canvas-line" />
           <motion.div
             initial={{ width: 0 }}
@@ -79,7 +96,7 @@ export function DeliveryForecast({
             );
           })}
         </div>
-        <p className="mt-2 text-[10.5px] text-ink-faint sm:text-xs">
+        <p className="mt-3.5 text-[11px] text-ink-faint sm:mt-2.5 sm:text-xs">
           {completed} of {total} completed
         </p>
       </div>

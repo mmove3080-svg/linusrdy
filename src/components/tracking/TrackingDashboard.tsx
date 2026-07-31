@@ -1,6 +1,6 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useCallback, useState } from "react";
 import { motion } from "framer-motion";
-import { Share2, Check, Package, Copy, Map as MapIcon } from "lucide-react";
+import { Share2, Check, Package, Copy, Map as MapIcon, Video, ChevronRight } from "lucide-react";
 import type { TrackingResponse, ShipmentStatus } from "@/types/shipment";
 import { ShipmentTimeline } from "./ShipmentTimeline";
 import { ShipmentDetails } from "./ShipmentDetails";
@@ -9,6 +9,7 @@ import { TrackingMap } from "./TrackingMap";
 import { useShipmentJourney } from "@/hooks/useShipmentJourney";
 import { formatEtaRelative } from "@/utils/forecast";
 import logoMark from "@/assets/logo-mark.png";
+import { CctvOverlay } from "./CctvOverlay";
 
 // Mapbox GL is heavy — load it only when a token is configured.
 const MapboxShipmentMap = lazy(() =>
@@ -35,6 +36,12 @@ const STATUS_PILL: Partial<Record<ShipmentStatus, string>> & { default: string }
 export function TrackingDashboard({ data }: { data: TrackingResponse }) {
   const { shipment, route } = data;
   const [tab, setTab] = useState<"map" | "details">("map");
+  const [truckArrived, setTruckArrived] = useState(false);
+  const [cctvOpen, setCctvOpen] = useState(false);
+  // Stable identity so TrackingMap's animation effect isn't re-run each render.
+  const handleTruckArrived = useCallback(() => setTruckArrived(true), []);
+  const openCctv = useCallback(() => setCctvOpen(true), []);
+  const closeCctv = useCallback(() => setCctvOpen(false), []);
   const [copiedShare, setCopiedShare] = useState(false);
   const [copiedNumber, setCopiedNumber] = useState(false);
 
@@ -222,7 +229,7 @@ export function TrackingDashboard({ data }: { data: TrackingResponse }) {
                 {journey.progressPercent}% of route complete
               </span>
             </div>
-            <div className="h-[270px] p-2 sm:h-[320px] sm:p-2.5 lg:h-[360px]">
+            <div className="relative h-[270px] p-2 sm:h-[320px] sm:p-2.5 lg:h-[360px]">
               {HAS_MAPBOX ? (
                 <Suspense
                   fallback={<div className="h-full w-full animate-pulse rounded-xl bg-canvas-tint" />}
@@ -230,10 +237,51 @@ export function TrackingDashboard({ data }: { data: TrackingResponse }) {
                   <MapboxShipmentMap shipment={shipment} route={route} journey={journey} />
                 </Suspense>
               ) : (
-                <TrackingMap shipment={shipment} route={route} journey={journey} />
+                <TrackingMap
+                  shipment={shipment}
+                  route={route}
+                  journey={journey}
+                  onTruckArrived={handleTruckArrived}
+                  onOpenCctv={openCctv}
+                />
+              )}
+
+              {/* CCTV preview fills the entire map card */}
+              {cctvOpen && (
+                <CctvOverlay shipment={shipment} journey={journey} onClose={closeCctv} />
               )}
             </div>
           </section>
+
+          {/* CCTV card — appears once the truck reaches the current location */}
+          {truckArrived && !cctvOpen && (
+            <button
+              type="button"
+              onClick={openCctv}
+              className="card group flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left transition-all duration-200 hover:border-violet-200 hover:shadow-lift sm:px-5"
+            >
+              <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-600 sm:h-10 sm:w-10">
+                <Video className="h-4 w-4 sm:h-[18px] sm:w-[18px]" strokeWidth={1.9} aria-hidden="true" />
+                <span className="absolute -right-0.5 -top-0.5 flex h-2.5 w-2.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
+                  <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500" />
+                </span>
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[12.5px] font-extrabold text-ink sm:text-[13.5px]">
+                  Watch Live Delivery Truck CCTV Footage
+                </span>
+                <span className="block text-[10.5px] text-ink-soft sm:text-[11.5px]">
+                  Live feed from the vehicle carrying your package
+                </span>
+              </span>
+              <ChevronRight
+                className="h-4 w-4 shrink-0 text-violet-600 transition-transform duration-200 group-hover:translate-x-0.5"
+                strokeWidth={2.4}
+                aria-hidden="true"
+              />
+            </button>
+          )}
 
           {/* Full details panel */}
           {tab === "details" && (

@@ -77,11 +77,40 @@ export function useShipmentJourney(shipment: Shipment): ShipmentJourney {
       ];
     });
 
+    // ── Enforce forward-only travel ──
+    // A step with real scan coordinates can otherwise sit "behind" the
+    // interpolated position of the step before it, which made the truck drive
+    // backwards before resuming. Projecting each point onto the origin→
+    // destination axis and clamping the projection to be non-decreasing keeps
+    // the path strictly forward, like a real vehicle.
+    const axisX = destination[0] - origin[0];
+    const axisY = destination[1] - origin[1];
+    const axisLenSq = axisX * axisX + axisY * axisY || 1;
+    const projectionOf = (p: [number, number]) =>
+      ((p[0] - origin[0]) * axisX + (p[1] - origin[1]) * axisY) / axisLenSq;
+
+    let maxProjection = -Infinity;
+    const forwardPoints = points.map((p, i) => {
+      const t = projectionOf(p);
+      if (t >= maxProjection) {
+        maxProjection = t;
+        return p;
+      }
+      // This step would reverse — slide it forward onto the axis at the
+      // furthest point reached so far, preserving its lateral offset.
+      const corrected: [number, number] = [
+        origin[0] + axisX * maxProjection,
+        origin[1] + axisY * maxProjection,
+      ];
+      void i;
+      return corrected;
+    });
+
     const steps: JourneyStep[] = sorted.map((event, i) => ({
       event,
       index: i,
       state: i < currentIndex ? "completed" : i === currentIndex ? "current" : "pending",
-      point: points[i],
+      point: forwardPoints[i],
     }));
 
     return {
@@ -89,7 +118,7 @@ export function useShipmentJourney(shipment: Shipment): ShipmentJourney {
       currentIndex,
       currentStep: steps[currentIndex] ?? null,
       // Completed journey only — the polyline stops at the current location.
-      traveledRoute: points.slice(0, currentIndex + 1),
+      traveledRoute: forwardPoints.slice(0, currentIndex + 1),
       progressPercent:
         steps.length > 1 ? Math.round((currentIndex / (steps.length - 1)) * 100) : 0,
       delivered,

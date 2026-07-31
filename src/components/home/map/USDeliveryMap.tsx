@@ -301,9 +301,9 @@ function USDeliveryMapInner() {
               <StatusCard
                 x={destX}
                 y={destY}
-                label={journey.dateLabel ?? "Delivered"}
+                /* Date immediately before the status: "Jul 30, 2026 • Delivered" */
+                label={`${journey.deliveryDate} • ${journey.deliveryStatus}`}
                 value={`${journey.dest.city}, ${journey.dest.state}`}
-                detail={journey.deliveryDate}
                 accent="green"
                 fadeIn
                 k={k}
