@@ -251,7 +251,7 @@ export function TrackingDashboard({ data }: { data: TrackingResponse }) {
             {/* CCTV preview covers the ENTIRE card — header bar, progress
                 readout and all edges included. */}
             {cctvOpen && (
-              <CctvOverlay shipment={shipment} journey={journey} onClose={closeCctv} />
+              <CctvOverlay onClose={closeCctv} />
             )}
           </section>
 

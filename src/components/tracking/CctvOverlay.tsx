@@ -1,13 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { X, Package, MapPin, Volume2, VolumeX } from "lucide-react";
-import type { Shipment } from "@/types/shipment";
-import type { ShipmentJourney } from "@/hooks/useShipmentJourney";
-import { formatPlace } from "@/utils/format";
+import { X, Volume2, VolumeX } from "lucide-react";
 import { useCctvAmbience } from "@/hooks/useCctvAmbience";
 
 interface CctvOverlayProps {
-  shipment: Shipment;
-  journey: ShipmentJourney;
   onClose: () => void;
 }
 
@@ -29,19 +24,18 @@ function useCctvTimestamp(): string {
 }
 
 /**
- * Live CCTV viewer — fills the entire map card.
+ * Live CCTV viewer — one uninterrupted video panel filling the entire map card.
  *
- * Recreates the reference overlay: LIVE header bar with feed label, CAM ident
- * top-left, live timestamp and REC indicator top-right, and a footer showing
- * the current stop (from the shared journey) and estimated arrival.
+ * Overlays: LIVE header bar with feed label and audio state, CAM ident
+ * top-left, live timestamp and REC indicator top-right, close button top-right.
  *
- * The player deliberately exposes no controls: it autoplays, loops, and is
- * muted so browsers permit playback.
+ * The video is displayed with object-contain so the full camera frame stays
+ * visible at its original aspect ratio — never stretched, zoomed or cropped.
+ * The player exposes no controls; loudness follows the device's volume.
  */
-export function CctvOverlay({ shipment, journey, onClose }: CctvOverlayProps) {
+export function CctvOverlay({ onClose }: CctvOverlayProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const timestamp = useCctvTimestamp();
-  const current = journey.currentStep;
   const [audioBlocked, setAudioBlocked] = useState(false);
 
   // Synthesized room tone, camera servo and beacon, layered under the video's
@@ -82,14 +76,6 @@ export function CctvOverlay({ shipment, journey, onClose }: CctvOverlayProps) {
       }
     };
   }, []);
-
-  const stopName = current?.event.status ?? shipment.status;
-  const stopPlace =
-    formatPlace(current?.event.city, current?.event.state) ||
-    shipment.currentLocation.city ||
-    shipment.destination.city;
-
-  const eta = shipment.deliveryWindow ?? shipment.estimatedDelivery ?? "";
 
   return (
     <div
@@ -139,7 +125,7 @@ export function CctvOverlay({ shipment, journey, onClose }: CctvOverlayProps) {
 
       {/* ── Video with overlays ── */}
       <div
-        className="relative flex-1 overflow-hidden bg-black"
+        className="relative min-h-0 flex-1 overflow-hidden bg-black"
         onClick={() => {
           // Recovers audio if an autoplay policy muted the feed.
           const video = videoRef.current;
@@ -153,7 +139,9 @@ export function CctvOverlay({ shipment, journey, onClose }: CctvOverlayProps) {
         <video
           ref={videoRef}
           src="/media/truck-cctv.mp4"
-          className="h-full w-full object-cover"
+          // object-contain preserves the original aspect ratio: the full
+          // camera frame stays visible, never stretched, zoomed or cropped.
+          className="h-full w-full object-contain"
           autoPlay
           loop
           playsInline
@@ -181,32 +169,6 @@ export function CctvOverlay({ shipment, journey, onClose }: CctvOverlayProps) {
         </div>
       </div>
 
-      {/* ── Footer: current stop + ETA ── */}
-      <div className="flex items-center gap-3 border-t border-white/10 bg-white/95 px-3 py-2 backdrop-blur sm:px-4 sm:py-2.5">
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-canvas-tint text-ink sm:h-9 sm:w-9">
-          <Package className="h-4 w-4" strokeWidth={1.8} aria-hidden="true" />
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="text-[9px] font-bold uppercase tracking-wider text-ink-faint sm:text-[11px]">
-            Current Stop
-          </p>
-          <p className="truncate text-[12px] font-extrabold text-ink sm:text-[15px]">{stopName}</p>
-          <p className="flex items-center gap-1 truncate text-[10px] text-ink-soft sm:text-xs">
-            <MapPin className="h-3 w-3 shrink-0" strokeWidth={2} aria-hidden="true" />
-            {stopPlace}
-          </p>
-        </div>
-        <span aria-hidden="true" className="h-8 w-px bg-canvas-line" />
-        <div className="text-right">
-          <p className="text-[9px] font-bold uppercase tracking-wider text-ink-faint sm:text-[11px]">
-            Est. Arrival
-          </p>
-          <p className="text-[12px] font-extrabold text-ink sm:text-[15px]">{eta || "—"}</p>
-          <p className="text-[10px] font-semibold text-brand-600 sm:text-xs">
-            {journey.delivered ? "Delivered" : "Today"}
-          </p>
-        </div>
-      </div>
     </div>
   );
 }
