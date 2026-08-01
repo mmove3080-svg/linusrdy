@@ -214,7 +214,7 @@ export function TrackingDashboard({ data }: { data: TrackingResponse }) {
           {/* Map panel — kept mounted so the map never re-initialises on tab switch */}
           <section
             aria-label="Live shipment map"
-            className={`card overflow-hidden rounded-2xl ${tab === "map" ? "block" : "hidden"}`}
+            className={`card relative overflow-hidden rounded-2xl ${tab === "map" ? "block" : "hidden"}`}
           >
             <div className="flex items-center gap-2.5 border-b border-canvas-line px-4 py-3">
               <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
@@ -229,7 +229,7 @@ export function TrackingDashboard({ data }: { data: TrackingResponse }) {
                 {journey.progressPercent}% of route complete
               </span>
             </div>
-            <div className="relative h-[270px] p-2 sm:h-[320px] sm:p-2.5 lg:h-[360px]">
+            <div className="h-[270px] p-2 sm:h-[320px] sm:p-2.5 lg:h-[360px]">
               {HAS_MAPBOX ? (
                 <Suspense
                   fallback={<div className="h-full w-full animate-pulse rounded-xl bg-canvas-tint" />}
@@ -246,11 +246,13 @@ export function TrackingDashboard({ data }: { data: TrackingResponse }) {
                 />
               )}
 
-              {/* CCTV preview fills the entire map card */}
-              {cctvOpen && (
-                <CctvOverlay shipment={shipment} journey={journey} onClose={closeCctv} />
-              )}
             </div>
+
+            {/* CCTV preview covers the ENTIRE card — header bar, progress
+                readout and all edges included. */}
+            {cctvOpen && (
+              <CctvOverlay shipment={shipment} journey={journey} onClose={closeCctv} />
+            )}
           </section>
 
           {/* CCTV card — appears once the truck reaches the current location */}

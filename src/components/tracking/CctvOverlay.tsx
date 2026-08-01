@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { X, Package, MapPin } from "lucide-react";
+import { X, Package, MapPin, Volume2, VolumeX } from "lucide-react";
 import type { Shipment } from "@/types/shipment";
 import type { ShipmentJourney } from "@/hooks/useShipmentJourney";
 import { formatPlace } from "@/utils/format";
+import { useCctvAmbience } from "@/hooks/useCctvAmbience";
 
 interface CctvOverlayProps {
   shipment: Shipment;
@@ -41,11 +42,26 @@ export function CctvOverlay({ shipment, journey, onClose }: CctvOverlayProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const timestamp = useCctvTimestamp();
   const current = journey.currentStep;
+  const [audioBlocked, setAudioBlocked] = useState(false);
 
-  // Autoplay as soon as the overlay opens.
+  // Synthesized room tone, camera servo and beacon, layered under the video's
+  // own audio track. Loudness follows the device's volume controls.
+  useCctvAmbience(!audioBlocked);
+
+  // Play with sound as soon as the overlay opens. The overlay is only ever
+  // opened by a click, which satisfies the browser's autoplay gesture
+  // requirement; if a policy still blocks it we fall back to a muted loop.
   useEffect(() => {
-    videoRef.current?.play().catch(() => {
-      /* autoplay blocked — the muted loop will start on first interaction */
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = false;
+    video.volume = 1; // device volume governs actual loudness
+    video.play().catch(() => {
+      video.muted = true;
+      setAudioBlocked(true);
+      video.play().catch(() => {
+        /* playback unavailable on this device */
+      });
     });
   }, []);
 
@@ -55,6 +71,17 @@ export function CctvOverlay({ shipment, journey, onClose }: CctvOverlayProps) {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
+
+  // Silence the video on unmount so nothing lingers after closing.
+  useEffect(() => {
+    const video = videoRef.current;
+    return () => {
+      if (video) {
+        video.pause();
+        video.muted = true;
+      }
+    };
+  }, []);
 
   const stopName = current?.event.status ?? shipment.status;
   const stopPlace =
@@ -71,7 +98,7 @@ export function CctvOverlay({ shipment, journey, onClose }: CctvOverlayProps) {
       aria-label="Live delivery truck CCTV footage"
     >
       {/* ── Header bar ── */}
-      <div className="flex items-center gap-3 px-3 py-2.5 sm:px-4 sm:py-3">
+      <div className="flex shrink-0 items-center gap-3 px-3 py-2 sm:px-4 sm:py-2.5">
         <span className="flex items-center gap-2">
           <span className="relative flex h-2.5 w-2.5">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
@@ -85,30 +112,56 @@ export function CctvOverlay({ shipment, journey, onClose }: CctvOverlayProps) {
         <span className="truncate text-[11px] font-medium text-white/70 sm:text-[13px]">
           Real-time Delivery Feed
         </span>
+        <span
+          className="hidden items-center gap-1.5 text-[10px] font-semibold text-white/55 sm:flex"
+          title={
+            audioBlocked
+              ? "Tap the feed to enable audio"
+              : "Audio live — use your device volume"
+          }
+        >
+          {audioBlocked ? (
+            <VolumeX className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />
+          ) : (
+            <Volume2 className="h-3.5 w-3.5" strokeWidth={2} aria-hidden="true" />
+          )}
+          {audioBlocked ? "TAP FOR AUDIO" : "AUDIO"}
+        </span>
         <button
           type="button"
           onClick={onClose}
-          aria-label="Close live footage"
-          className="ml-auto rounded-lg p-1.5 text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+          aria-label="Close live footage and return to the map"
+          className="ml-auto rounded-lg p-1.5 text-white/80 transition-colors hover:bg-white/15 hover:text-white"
         >
           <X className="h-4 w-4 sm:h-[18px] sm:w-[18px]" strokeWidth={2.2} />
         </button>
       </div>
 
       {/* ── Video with overlays ── */}
-      <div className="relative mx-2 flex-1 overflow-hidden rounded-lg bg-black sm:mx-3">
+      <div
+        className="relative flex-1 overflow-hidden bg-black"
+        onClick={() => {
+          // Recovers audio if an autoplay policy muted the feed.
+          const video = videoRef.current;
+          if (video && audioBlocked) {
+            video.muted = false;
+            void video.play();
+            setAudioBlocked(false);
+          }
+        }}
+      >
         <video
           ref={videoRef}
           src="/media/truck-cctv.mp4"
           className="h-full w-full object-cover"
           autoPlay
-          muted
           loop
           playsInline
-          // No controls: no fullscreen, play or pause affordances.
+          // No controls at all: no fullscreen, play, pause or volume slider.
+          // Loudness is governed entirely by the device's own volume controls.
           controls={false}
           disablePictureInPicture
-          controlsList="nodownload nofullscreen noremoteplayback"
+          controlsList="nodownload nofullscreen noremoteplayback noplaybackrate"
         />
 
         {/* CAM ident */}
@@ -129,9 +182,9 @@ export function CctvOverlay({ shipment, journey, onClose }: CctvOverlayProps) {
       </div>
 
       {/* ── Footer: current stop + ETA ── */}
-      <div className="m-2 flex items-center gap-3 rounded-xl bg-white px-3 py-2.5 sm:m-3 sm:px-4 sm:py-3">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-canvas-tint text-ink sm:h-11 sm:w-11">
-          <Package className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={1.8} aria-hidden="true" />
+      <div className="flex items-center gap-3 border-t border-white/10 bg-white/95 px-3 py-2 backdrop-blur sm:px-4 sm:py-2.5">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-canvas-tint text-ink sm:h-9 sm:w-9">
+          <Package className="h-4 w-4" strokeWidth={1.8} aria-hidden="true" />
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-[9px] font-bold uppercase tracking-wider text-ink-faint sm:text-[11px]">
@@ -143,7 +196,7 @@ export function CctvOverlay({ shipment, journey, onClose }: CctvOverlayProps) {
             {stopPlace}
           </p>
         </div>
-        <span aria-hidden="true" className="h-9 w-px bg-canvas-line" />
+        <span aria-hidden="true" className="h-8 w-px bg-canvas-line" />
         <div className="text-right">
           <p className="text-[9px] font-bold uppercase tracking-wider text-ink-faint sm:text-[11px]">
             Est. Arrival

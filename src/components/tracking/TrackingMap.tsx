@@ -96,12 +96,47 @@ function TrackingMapInner({ shipment, route, journey, onTruckArrived, onOpenCctv
     const duration = reduced ? 1 : 6500;
     const start = performance.now();
 
+    // Heading in degrees, smoothed so the truck turns into corners rather than
+    // snapping. The truck artwork faces right (+x), so 0deg = travelling east.
+    let heading: number | null = null;
+    const LOOK_AHEAD = 1.2; // path distance sampled to determine direction
+
     const step = (now: number) => {
       const t = Math.min((now - start) / duration, 1);
       const eased = easeInOut(t);
       pathEl.setAttribute("stroke-dashoffset", String(length * (1 - eased)));
-      const pt = pathEl.getPointAtLength(length * eased);
-      pin.setAttribute("transform", `translate(${pt.x}, ${pt.y}) scale(${kRef.current})`);
+      const travelled = length * eased;
+      const pt = pathEl.getPointAtLength(travelled);
+
+      // ── Face the direction of travel ──
+      // Sample just ahead of and behind the current position; the vector
+      // between them is the tangent of the route at this point.
+      const ahead = pathEl.getPointAtLength(Math.min(length, travelled + LOOK_AHEAD));
+      const behind = pathEl.getPointAtLength(Math.max(0, travelled - LOOK_AHEAD));
+      const dx = ahead.x - behind.x;
+      const dy = ahead.y - behind.y;
+
+      if (dx !== 0 || dy !== 0) {
+        const target = (Math.atan2(dy, dx) * 180) / Math.PI;
+        if (heading === null) {
+          heading = target;
+        } else {
+          // Shortest-path easing so corners never spin the long way round.
+          const delta = ((target - heading + 540) % 360) - 180;
+          heading += delta * 0.18;
+        }
+      }
+
+      const angle = heading ?? 0;
+      // Heading west would leave the truck upside down. Mirroring horizontally
+      // BEFORE the rotation keeps it upright and still pointing forwards; the
+      // rotation is negated to compensate for the flipped axis.
+      const facingWest = Math.abs(((angle + 180) % 360) - 180) > 90;
+      const transform = facingWest
+        ? `translate(${pt.x}, ${pt.y}) scale(${-kRef.current}, ${kRef.current}) rotate(${180 - angle})`
+        : `translate(${pt.x}, ${pt.y}) rotate(${angle}) scale(${kRef.current})`;
+
+      pin.setAttribute("transform", transform);
       if (!journey.delivered) pin.style.opacity = "1";
       if (t < 1) {
         raf = requestAnimationFrame(step);
