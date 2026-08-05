@@ -7,22 +7,21 @@ interface CctvOverlayProps {
 }
 
 /**
- * Source video framing.
+ * Source framing.
  *
- * real.mp4 is 834x1112. The approved framing (copy_crop.MP4) is 834x924 —
- * the same width with 188px trimmed vertically, i.e. 83.1% of the height.
- * Rather than re-encoding, the video is scaled up inside a clipping container
- * so the visible region matches that framing exactly, with no distortion.
+ * real.mp4 is 834x1112 (portrait). A perfect square crop takes the full width
+ * and 834px of height — 75% of the frame. The retained region is biased toward
+ * the top so it begins at the observation windows on the rear doors and ends
+ * at the metal bench bases.
  *
- * CROP_ORIGIN controls which part is kept:
- *   "center" trims evenly top and bottom, "top" keeps the lower portion,
- *   "bottom" keeps the upper portion.
+ * CROP_Y_PERCENT is the vertical anchor passed to object-position:
+ *   0% keeps the very top, 50% centres, 100% keeps the bottom.
+ * Adjust this single value if the framing needs nudging.
  */
-const VISIBLE_HEIGHT_RATIO = 924 / 1112; // 0.831
-const CROP_ORIGIN: "center" | "top" | "bottom" = "center";
+const CROP_Y_PERCENT = 22;
 
 /** "2026-10-20 Mon 21:05:09" — real date, 24-hour clock, ticking live. */
-function useCctvTimestamp(): string {
+function useCctvTimestamp(): { date: string; time: string } {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     const id = window.setInterval(() => setNow(new Date()), 1000);
@@ -30,36 +29,35 @@ function useCctvTimestamp(): string {
   }, []);
   return useMemo(() => {
     const pad = (n: number) => String(n).padStart(2, "0");
-    const day = now.toLocaleDateString("en-US", { weekday: "short" });
-    return (
-      `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${day} ` +
-      `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`
-    );
+    const weekday = now.toLocaleDateString("en-US", { weekday: "short" }).toUpperCase();
+    return {
+      date: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${weekday}`,
+      time: `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`,
+    };
   }, [now]);
 }
 
 /**
- * Live CCTV viewer — one uninterrupted video panel filling the entire map card.
+ * Live CCTV viewer — a square surveillance panel covering the map card,
+ * including the Live Map / Shipment Details tab headings.
  *
- * Overlays: LIVE header bar with feed label and audio state, CAM ident
- * top-left, live timestamp and REC indicator top-right, close button top-right.
- *
- * The video is displayed with object-contain so the full camera frame stays
- * visible at its original aspect ratio — never stretched, zoomed or cropped.
- * The player exposes no controls; loudness follows the device's volume.
+ * The footage is square-cropped, given a subtle surveillance treatment
+ * (desaturation, lifted contrast, vignette, scanlines, sensor noise) and a
+ * 70% dark grade blended into the image so it reads as part of the original
+ * recording rather than a layer on top of it.
  */
 export function CctvOverlay({ onClose }: CctvOverlayProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const timestamp = useCctvTimestamp();
+  const { date, time } = useCctvTimestamp();
   const [audioBlocked, setAudioBlocked] = useState(false);
 
-  // Synthesized room tone, camera servo and beacon, layered under the video's
-  // own audio track. Loudness follows the device's volume controls.
+  // Synthesized room tone, DVR noise and status beeps, layered under the
+  // video's own audio. Loudness follows the device's volume controls.
   useCctvAmbience(!audioBlocked);
 
-  // Play with sound as soon as the overlay opens. The overlay is only ever
-  // opened by a click, which satisfies the browser's autoplay gesture
-  // requirement; if a policy still blocks it we fall back to a muted loop.
+  // Play with sound as soon as the overlay opens. The overlay is only opened
+  // by a click, satisfying the browser's autoplay gesture requirement; if a
+  // policy still blocks it we fall back to a muted loop.
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -94,7 +92,7 @@ export function CctvOverlay({ onClose }: CctvOverlayProps) {
 
   return (
     <div
-      className="absolute inset-0 z-20 flex flex-col overflow-hidden rounded-2xl bg-[#0B1533]"
+      className="absolute inset-0 z-30 flex flex-col overflow-hidden rounded-2xl bg-[#080D1C]"
       role="dialog"
       aria-label="Live delivery truck CCTV footage"
     >
@@ -116,9 +114,7 @@ export function CctvOverlay({ onClose }: CctvOverlayProps) {
         <span
           className="hidden items-center gap-1.5 text-[10px] font-semibold text-white/55 sm:flex"
           title={
-            audioBlocked
-              ? "Tap the feed to enable audio"
-              : "Audio live — use your device volume"
+            audioBlocked ? "Tap the feed to enable audio" : "Audio live — use your device volume"
           }
         >
           {audioBlocked ? (
@@ -138,7 +134,7 @@ export function CctvOverlay({ onClose }: CctvOverlayProps) {
         </button>
       </div>
 
-      {/* ── Video with overlays ── */}
+      {/* ── Square surveillance panel ── */}
       <div
         className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-black"
         onClick={() => {
@@ -151,47 +147,103 @@ export function CctvOverlay({ onClose }: CctvOverlayProps) {
           }
         }}
       >
-        <video
-          ref={videoRef}
-          src="/media/truck-cctv.mp4"
-          style={{
-            // Scale so the retained region fills the frame, then shift to the
-            // chosen origin. Width and height scale together, so proportions
-            // are preserved — nothing is stretched.
-            height: `${100 / VISIBLE_HEIGHT_RATIO}%`,
-            objectPosition:
-              CROP_ORIGIN === "top" ? "50% 100%" : CROP_ORIGIN === "bottom" ? "50% 0%" : "50% 50%",
-          }}
-          // object-contain preserves the original aspect ratio: the full
-          // camera frame stays visible, never stretched, zoomed or cropped.
-          className="w-full object-cover"
-          autoPlay
-          loop
-          playsInline
-          // No controls at all: no fullscreen, play, pause or volume slider.
-          // Loudness is governed entirely by the device's own volume controls.
-          controls={false}
-          disablePictureInPicture
-          controlsList="nodownload nofullscreen noremoteplayback noplaybackrate"
-        />
+        {/* The square frame: sized by the shorter axis so it always fits
+            exactly, with no bars or empty margin inside it. */}
+        <div
+          className="relative aspect-square h-full max-h-full w-auto max-w-full overflow-hidden"
+          style={{ containerType: "inline-size" }}
+        >
+          <video
+            ref={videoRef}
+            src="/media/truck-cctv.mp4"
+            className="h-full w-full object-cover"
+            style={{
+              // Square crop from a portrait source: full width, anchored high
+              // so the frame runs from the observation windows down to the
+              // bench bases. Proportions are untouched.
+              objectPosition: `50% ${CROP_Y_PERCENT}%`,
+              // Surveillance-camera treatment: slightly desaturated, lifted
+              // contrast and a cooler cast, as commercial CCTV sensors render.
+              filter: "saturate(0.72) contrast(1.14) brightness(0.94)",
+            }}
+            autoPlay
+            loop
+            playsInline
+            // No controls at all: no fullscreen, play, pause or volume slider.
+            controls={false}
+            disablePictureInPicture
+            controlsList="nodownload nofullscreen noremoteplayback noplaybackrate"
+          />
 
-        {/* CAM ident */}
-        <span className="pointer-events-none absolute left-3 top-2.5 text-[13px] font-extrabold tracking-wide text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] sm:text-lg">
-          CAM 02
-        </span>
+          {/* 70% dark grade — multiplied into the image so it reads as part of
+              the original exposure rather than a panel laid over it. */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background: "rgba(6, 10, 22, 0.7)",
+              mixBlendMode: "multiply",
+            }}
+          />
 
-        {/* Timestamp + REC */}
-        <div className="pointer-events-none absolute right-3 top-2.5 text-right">
-          <p className="font-mono text-[10px] text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] sm:text-[13px]">
-            {timestamp}
-          </p>
-          <p className="mt-1 flex items-center justify-end gap-1.5 text-[10px] font-bold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] sm:text-xs">
-            <span className="inline-flex h-1.5 w-1.5 animate-pulse rounded-full bg-red-500" />
+          {/* Lens vignette — darker corners, as surveillance optics produce. */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(ellipse at center, transparent 42%, rgba(0,0,0,0.5) 100%)",
+            }}
+          />
+
+          {/* Interlace scanlines — very fine, low opacity. */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 opacity-[0.16]"
+            style={{
+              backgroundImage:
+                "repeating-linear-gradient(0deg, rgba(0,0,0,0.55) 0px, rgba(0,0,0,0.55) 1px, transparent 1px, transparent 3px)",
+            }}
+          />
+
+          {/* Sensor noise — static grain typical of low-light CCTV. */}
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 opacity-[0.07] mix-blend-overlay"
+            style={{
+              backgroundImage:
+                "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E\")",
+            }}
+          />
+
+          {/* ── Overlay graphics, inside the video frame ── */}
+          {/* CAM ident */}
+          <span
+            className="pointer-events-none absolute left-[3%] top-[3%] font-mono text-[clamp(11px,2.6cqw,20px)] font-bold tracking-widest text-white/90"
+            style={{ textShadow: "0 0 4px rgba(0,0,0,0.95), 0 1px 2px rgba(0,0,0,0.9)" }}
+          >
+            CAM 02
+          </span>
+
+          {/* REC indicator */}
+          <span
+            className="pointer-events-none absolute right-[3%] top-[3%] flex items-center gap-1.5 font-mono text-[clamp(10px,2.2cqw,17px)] font-bold tracking-widest text-white/90"
+            style={{ textShadow: "0 0 4px rgba(0,0,0,0.95), 0 1px 2px rgba(0,0,0,0.9)" }}
+          >
+            <span className="inline-flex h-[0.55em] w-[0.55em] animate-pulse rounded-full bg-red-500" />
             REC
-          </p>
+          </span>
+
+          {/* Date and time, bottom-right as commercial DVRs render them */}
+          <span
+            className="pointer-events-none absolute bottom-[3%] right-[3%] text-right font-mono text-[clamp(10px,2.2cqw,17px)] font-bold tracking-wider text-white/90"
+            style={{ textShadow: "0 0 4px rgba(0,0,0,0.95), 0 1px 2px rgba(0,0,0,0.9)" }}
+          >
+            <span className="block">{date}</span>
+            <span className="block">{time}</span>
+          </span>
         </div>
       </div>
-
     </div>
   );
 }

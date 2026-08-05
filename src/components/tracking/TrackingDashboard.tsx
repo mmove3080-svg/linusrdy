@@ -180,8 +180,20 @@ export function TrackingDashboard({ data }: { data: TrackingResponse }) {
           <ShipmentTimeline journey={journey} />
         </div>
 
-        {/* Right: map card (unchanged) + details and forecast */}
-        <div className="order-1 space-y-3 p-3 sm:space-y-3.5 sm:p-5 lg:order-2">
+        {/* Right: tabs, map card, details and forecast.
+            `relative` makes this the anchor for the CCTV feed, which covers
+            the tab headings and the map card together. */}
+        <div className="relative order-1 space-y-3 p-3 sm:space-y-3.5 sm:p-5 lg:order-2">
+          {/* CCTV feed — covers the Live Map / Shipment Details headings and
+              the map card beneath them. */}
+          {cctvOpen && (
+            <div className="absolute inset-x-3 top-3 z-30 sm:inset-x-5 sm:top-5" style={{ bottom: "auto" }}>
+              <div className="relative h-[330px] sm:h-[390px] lg:h-[430px]">
+                <CctvOverlay onClose={closeCctv} />
+              </div>
+            </div>
+          )}
+
           {/* Tabs */}
           <div role="tablist" aria-label="Shipment view" className="flex gap-5 border-b border-canvas-line sm:gap-7">
             {(
@@ -248,11 +260,6 @@ export function TrackingDashboard({ data }: { data: TrackingResponse }) {
 
             </div>
 
-            {/* CCTV preview covers the ENTIRE card — header bar, progress
-                readout and all edges included. */}
-            {cctvOpen && (
-              <CctvOverlay onClose={closeCctv} />
-            )}
           </section>
 
           {/* CCTV card — appears once the truck reaches the current location */}
