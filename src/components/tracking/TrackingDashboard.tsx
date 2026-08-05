@@ -184,18 +184,21 @@ export function TrackingDashboard({ data }: { data: TrackingResponse }) {
             `relative` makes this the anchor for the CCTV feed, which covers
             the tab headings and the map card together. */}
         <div className="relative order-1 space-y-3 p-3 sm:space-y-3.5 sm:p-5 lg:order-2">
-          {/* CCTV feed — covers the Live Map / Shipment Details headings and
-              the map card beneath them. */}
-          {cctvOpen && (
-            <div className="absolute inset-x-3 top-3 z-30 sm:inset-x-5 sm:top-5" style={{ bottom: "auto" }}>
-              <div className="relative h-[330px] sm:h-[390px] lg:h-[430px]">
+          {/* Tabs and map card grouped together: the CCTV feed stretches to
+              this group's exact bounds, so its bottom edge always meets the
+              map card's bottom (covering the card's rounded corners) at every
+              breakpoint, without a fixed height to fall short. */}
+          <div className="relative">
+            {/* -bottom-px extends a hair past the card's edge so the rounded
+                corner beneath is fully covered at any zoom level. */}
+            {cctvOpen && (
+              <div className="absolute inset-x-0 -bottom-px top-0 z-30">
                 <CctvOverlay onClose={closeCctv} />
               </div>
-            </div>
-          )}
+            )}
 
           {/* Tabs */}
-          <div role="tablist" aria-label="Shipment view" className="flex gap-5 border-b border-canvas-line sm:gap-7">
+          <div role="tablist" aria-label="Shipment view" className="mb-3 flex gap-5 border-b border-canvas-line sm:mb-3.5 sm:gap-7">
             {(
               [
                 { id: "map", label: "Live Map" },
@@ -261,6 +264,7 @@ export function TrackingDashboard({ data }: { data: TrackingResponse }) {
             </div>
 
           </section>
+          </div>
 
           {/* CCTV card — appears once the truck reaches the current location */}
           {truckArrived && !cctvOpen && (
