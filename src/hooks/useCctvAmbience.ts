@@ -10,8 +10,11 @@ import { useEffect, useRef } from "react";
  *      housing and vehicle cabin.
  *   2. Camera motor — a soft servo whir that sweeps periodically, as though
  *      the lens is adjusting focus.
- *   3. Security beacon — a short blip synchronised to the flashing red light,
- *      plus the faint tick of the recording indicator.
+ *   3. DVR/NVR operating noise — a drifting resonant band, like drive and fan
+ *      noise inside a recorder chassis.
+ *   4. Status beeps — system chirps and LED indicator blips scheduled at
+ *      random intervals (never on a fixed timer, so they don't become
+ *      repetitive), plus the faint tick of the recording indicator.
  *
  * Master output follows the device's own volume: there is no in-app volume
  * control, and the gain is fixed at a natural listening level.
@@ -119,15 +122,67 @@ export function useCctvAmbience(enabled: boolean) {
       osc.stop(t + duration + 0.05);
     };
 
-    // Red beacon pulse, matching the flashing light in the footage
-    const beaconTimer = window.setInterval(() => blip(1180, 0.16, 0.05), 3400);
-    // Quiet recording tick
-    const recTimer = window.setInterval(() => blip(2400, 0.045, 0.018), 1000);
+    // ── DVR/NVR operating noise ──
+    // A narrow resonant band over the noise floor, like drive and fan noise
+    // inside a recorder chassis.
+    const dvr = ctx.createBufferSource();
+    dvr.buffer = noiseBuffer;
+    dvr.loop = true;
+    const dvrFilter = ctx.createBiquadFilter();
+    dvrFilter.type = "bandpass";
+    dvrFilter.frequency.value = 1450;
+    dvrFilter.Q.value = 9;
+    const dvrGain = ctx.createGain();
+    dvrGain.gain.value = 0.05;
+    dvr.connect(dvrFilter).connect(dvrGain).connect(master);
+    dvr.start();
+
+    // Slow drift on the DVR band so it never sounds like a static tone.
+    const drift = ctx.createOscillator();
+    drift.type = "sine";
+    drift.frequency.value = 0.07;
+    const driftDepth = ctx.createGain();
+    driftDepth.gain.value = 120;
+    drift.connect(driftDepth).connect(dvrFilter.frequency);
+    drift.start();
+
+    // ── Status beeps at irregular intervals ──
+    // Real surveillance gear chirps unpredictably, so each beep schedules the
+    // next one at a random delay rather than running on a fixed timer.
+    const beepTimers: number[] = [];
+    const scheduleBeep = (
+      minDelay: number,
+      maxDelay: number,
+      make: () => void,
+    ): void => {
+      const delay = minDelay + Math.random() * (maxDelay - minDelay);
+      const id = window.setTimeout(() => {
+        make();
+        scheduleBeep(minDelay, maxDelay, make);
+      }, delay);
+      beepTimers.push(id);
+    };
+
+    // System status beep — occasional, slightly varied in pitch.
+    scheduleBeep(6000, 15000, () => {
+      const freq = 1050 + Math.random() * 260;
+      blip(freq, 0.14, 0.045);
+      // Sometimes a double chirp, as status tones often are.
+      if (Math.random() < 0.35) {
+        window.setTimeout(() => blip(freq + 90, 0.1, 0.035), 180);
+      }
+    });
+
+    // LED indicator blip — sparser and quieter.
+    scheduleBeep(11000, 26000, () => blip(2050 + Math.random() * 400, 0.06, 0.022));
+
+    // Recording tick — steady but very quiet, the heartbeat of the recorder.
+    const recTimer = window.setInterval(() => blip(2400, 0.04, 0.014), 1000);
 
     stopRef.current = () => {
       window.clearInterval(motorTimer);
-      window.clearInterval(beaconTimer);
       window.clearInterval(recTimer);
+      beepTimers.forEach((id) => window.clearTimeout(id));
       const t = ctx.currentTime;
       try {
         master.gain.cancelScheduledValues(t);
@@ -141,6 +196,8 @@ export function useCctvAmbience(enabled: boolean) {
           noise.stop();
           hum.stop();
           motor.stop();
+          dvr.stop();
+          drift.stop();
           void ctx.close();
         } catch {
           /* already stopped */

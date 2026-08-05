@@ -6,6 +6,21 @@ interface CctvOverlayProps {
   onClose: () => void;
 }
 
+/**
+ * Source video framing.
+ *
+ * real.mp4 is 834x1112. The approved framing (copy_crop.MP4) is 834x924 —
+ * the same width with 188px trimmed vertically, i.e. 83.1% of the height.
+ * Rather than re-encoding, the video is scaled up inside a clipping container
+ * so the visible region matches that framing exactly, with no distortion.
+ *
+ * CROP_ORIGIN controls which part is kept:
+ *   "center" trims evenly top and bottom, "top" keeps the lower portion,
+ *   "bottom" keeps the upper portion.
+ */
+const VISIBLE_HEIGHT_RATIO = 924 / 1112; // 0.831
+const CROP_ORIGIN: "center" | "top" | "bottom" = "center";
+
 /** "2026-10-20 Mon 21:05:09" — real date, 24-hour clock, ticking live. */
 function useCctvTimestamp(): string {
   const [now, setNow] = useState(() => new Date());
@@ -125,7 +140,7 @@ export function CctvOverlay({ onClose }: CctvOverlayProps) {
 
       {/* ── Video with overlays ── */}
       <div
-        className="relative min-h-0 flex-1 overflow-hidden bg-black"
+        className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-black"
         onClick={() => {
           // Recovers audio if an autoplay policy muted the feed.
           const video = videoRef.current;
@@ -139,9 +154,17 @@ export function CctvOverlay({ onClose }: CctvOverlayProps) {
         <video
           ref={videoRef}
           src="/media/truck-cctv.mp4"
+          style={{
+            // Scale so the retained region fills the frame, then shift to the
+            // chosen origin. Width and height scale together, so proportions
+            // are preserved — nothing is stretched.
+            height: `${100 / VISIBLE_HEIGHT_RATIO}%`,
+            objectPosition:
+              CROP_ORIGIN === "top" ? "50% 100%" : CROP_ORIGIN === "bottom" ? "50% 0%" : "50% 50%",
+          }}
           // object-contain preserves the original aspect ratio: the full
           // camera frame stays visible, never stretched, zoomed or cropped.
-          className="h-full w-full object-contain"
+          className="w-full object-cover"
           autoPlay
           loop
           playsInline
@@ -154,7 +177,7 @@ export function CctvOverlay({ onClose }: CctvOverlayProps) {
 
         {/* CAM ident */}
         <span className="pointer-events-none absolute left-3 top-2.5 text-[13px] font-extrabold tracking-wide text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] sm:text-lg">
-          CAM 04
+          CAM 02
         </span>
 
         {/* Timestamp + REC */}
