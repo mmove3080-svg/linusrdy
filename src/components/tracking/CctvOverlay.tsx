@@ -175,17 +175,6 @@ export function CctvOverlay({ onClose }: CctvOverlayProps) {
             controlsList="nodownload nofullscreen noremoteplayback noplaybackrate"
           />
 
-          {/* 70% dark grade — multiplied into the image so it reads as part of
-              the original exposure rather than a panel laid over it. */}
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0"
-            style={{
-              background: "rgba(6, 10, 22, 0.7)",
-              mixBlendMode: "multiply",
-            }}
-          />
-
           {/* Lens vignette — darker corners, as surveillance optics produce. */}
           <div
             aria-hidden="true"
@@ -225,23 +214,20 @@ export function CctvOverlay({ onClose }: CctvOverlayProps) {
             CAM 02
           </span>
 
-          {/* REC indicator */}
-          <span
-            className="pointer-events-none absolute right-[3%] top-[3%] flex items-center gap-1.5 font-mono text-[clamp(10px,2.2cqw,17px)] font-bold tracking-widest text-white/90"
+          {/* Date and time top-right, with the REC indicator beneath them —
+              the arrangement commercial DVR systems use. */}
+          <div
+            className="pointer-events-none absolute right-[3%] top-[3%] text-right font-mono text-[clamp(10px,2.2cqw,17px)] font-bold text-white/90"
             style={{ textShadow: "0 0 4px rgba(0,0,0,0.95), 0 1px 2px rgba(0,0,0,0.9)" }}
           >
-            <span className="inline-flex h-[0.55em] w-[0.55em] animate-pulse rounded-full bg-red-500" />
-            REC
-          </span>
-
-          {/* Date and time, bottom-right as commercial DVRs render them */}
-          <span
-            className="pointer-events-none absolute bottom-[3%] right-[3%] text-right font-mono text-[clamp(10px,2.2cqw,17px)] font-bold tracking-wider text-white/90"
-            style={{ textShadow: "0 0 4px rgba(0,0,0,0.95), 0 1px 2px rgba(0,0,0,0.9)" }}
-          >
-            <span className="block">{date}</span>
-            <span className="block">{time}</span>
-          </span>
+            <span className="block tracking-wider">
+              {date} {time}
+            </span>
+            <span className="mt-1 flex items-center justify-end gap-1.5 tracking-widest">
+              <span className="inline-flex h-[0.55em] w-[0.55em] animate-pulse rounded-full bg-red-500" />
+              REC
+            </span>
+          </div>
         </div>
       </div>
     </div>
