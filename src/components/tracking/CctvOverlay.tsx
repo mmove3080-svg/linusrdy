@@ -1,24 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { X, Volume2, VolumeX } from "lucide-react";
 import { useCctvAmbience } from "@/hooks/useCctvAmbience";
+import { getActiveCctvSource } from "@/config/cctvSources";
 
 interface CctvOverlayProps {
   onClose: () => void;
 }
 
 /**
- * Source framing.
+ * The displayed clip, its camera label and its crop anchor all come from the
+ * CCTV registry in `src/config/cctvSources.ts`. Switch footage by changing
+ * ACTIVE_CCTV_VIDEO there — nothing in this component needs to change.
  *
- * real.mp4 is 834x1112 (portrait). A perfect square crop takes the full width
- * and 834px of height — 75% of the frame. The retained region is biased toward
- * the top so it begins at the observation windows on the rear doors and ends
- * at the metal bench bases.
- *
- * CROP_Y_PERCENT is the vertical anchor passed to object-position:
- *   0% keeps the very top, 50% centres, 100% keeps the bottom.
- * Adjust this single value if the framing needs nudging.
+ * Both clips are 834x1112 portrait H.264, so the square crop (full width,
+ * 75% of the height, anchored high to run from the observation windows down
+ * to the bench bases) applies identically to each.
  */
-const CROP_Y_PERCENT = 22;
 
 /** "2026-10-20 Mon 21:05:09" — real date, 24-hour clock, ticking live. */
 function useCctvTimestamp(): { date: string; time: string } {
@@ -50,6 +47,8 @@ export function CctvOverlay({ onClose }: CctvOverlayProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const { date, time } = useCctvTimestamp();
   const [audioBlocked, setAudioBlocked] = useState(false);
+  // Active clip, camera label and crop anchor — all from the registry.
+  const source = useMemo(() => getActiveCctvSource(), []);
 
   // Synthesized room tone, DVR noise and status beeps, layered under the
   // video's own audio. Loudness follows the device's volume controls.
@@ -155,13 +154,14 @@ export function CctvOverlay({ onClose }: CctvOverlayProps) {
         >
           <video
             ref={videoRef}
-            src="/media/truck-cctv.mp4"
+            src={source.src}
+            key={source.src}
             className="h-full w-full object-cover"
             style={{
               // Square crop from a portrait source: full width, anchored high
               // so the frame runs from the observation windows down to the
               // bench bases. Proportions are untouched.
-              objectPosition: `50% ${CROP_Y_PERCENT}%`,
+              objectPosition: `50% ${source.cropYPercent}%`,
               // Surveillance-camera treatment: slightly desaturated, lifted
               // contrast and a cooler cast, as commercial CCTV sensors render.
               filter: "saturate(0.72) contrast(1.14) brightness(0.94)",
@@ -211,7 +211,7 @@ export function CctvOverlay({ onClose }: CctvOverlayProps) {
             className="pointer-events-none absolute left-[3%] top-[3%] font-mono text-[clamp(11px,2.6cqw,20px)] font-bold tracking-widest text-white/90"
             style={{ textShadow: "0 0 4px rgba(0,0,0,0.95), 0 1px 2px rgba(0,0,0,0.9)" }}
           >
-            CAM 02
+            {source.camLabel}
           </span>
 
           {/* Date and time top-right, with the REC indicator beneath them —
